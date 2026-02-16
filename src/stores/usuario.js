@@ -5,7 +5,7 @@ import api from "../services/api.js";
 export const useusuarioStore = defineStore('usuario', {
     state: () => ({
         datosUsuario: null,
-        cargando: false,
+        cargando: true,
     }),
 
     actions: {

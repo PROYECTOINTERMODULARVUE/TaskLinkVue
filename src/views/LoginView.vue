@@ -1,15 +1,16 @@
 <script setup>
 import { useusuarioStore } from '@/stores/usuario';
 import { ErrorMessage, Field, Form } from 'vee-validate';
+import { useRouter } from 'vue-router';
 import * as yup from 'yup'
 
 const usuarioStore = useusuarioStore();
-
+const router = useRouter();
 const loguearse = async (values) => {
     console.log('Formulario enviado con:', values);
     const resultado = await usuarioStore.iniciarSesion(values);
     if (resultado.success) {
-        console.log('Login exitoso:', resultado.data);
+       router.push('/'); 
     } else {
         console.error('Error de login:', resultado.error);
     }

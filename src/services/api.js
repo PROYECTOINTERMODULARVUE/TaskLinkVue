@@ -4,17 +4,19 @@ const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 
 const apiClient = axios.create({
     baseURL: `${SERVER_URL}api`,
-    withCredentials: true,
+    withCredentials: true,withXSRFToken: true,
     headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json',
         'X-Requested-With': 'XMLHttpRequest'
+        
     }
 });
 
 const webClient = axios.create({
     baseURL: SERVER_URL,
     withCredentials: true,
+    withXSRFToken: true,
     headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json',

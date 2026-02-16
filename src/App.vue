@@ -1,7 +1,17 @@
 <script setup>
 import { useRoute } from 'vue-router';
 import AppMenu from './components/AppMenu.vue';
-const route =useRoute();
+import { useusuarioStore } from './stores/usuario';
+import { onMounted } from 'vue';
+const route = useRoute();
+
+const usuarioStore = useusuarioStore();
+
+onMounted(async () => {
+  if (!usuarioStore.datosUsuario) {
+    await usuarioStore.cargarUsuario();
+  }
+});
 
 </script>
 
@@ -25,6 +35,7 @@ header {
   margin-bottom: 20px;
   gap: 10px;
   border: 1px solid lightgrey;
-  border-radius: 20px;
+  border-bottom-left-radius: 20px;
+  border-bottom-right-radius: 20px;
 }
 </style>
