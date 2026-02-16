@@ -1,0 +1,11 @@
+--2026-02-16 17:20:08--  https://ui-avatars.com/api/?name=User
+Resolviendo ui-avatars.com (ui-avatars.com)... 172.67.75.120, 104.26.9.185, 104.26.8.185, ...
+Conectando con ui-avatars.com (ui-avatars.com)[172.67.75.120]:443... conectado.
+Petición HTTP enviada, esperando respuesta... 200 OK
+Longitud: no especificado [image/svg+xml]
+Guardando como: ‘/home/batoi/Escritorio/CursoWEB/PROYECTO INTERMODULARLARAVEL/PROYECTO_VUE/TaskLinkVue/src/assets/img/default-avatar.png’
+
+      /home/            0  --.-KB/s               /home/batoi/          560  --.-KB/s    en 0s      
+
+2026-02-16 17:20:09 (14,1 MB/s) - ‘/home/batoi/Escritorio/CursoWEB/PROYECTO INTERMODULARLARAVEL/PROYECTO_VUE/TaskLinkVue/src/assets/img/default-avatar.png’ guardado [560]
+

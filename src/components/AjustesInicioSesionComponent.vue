@@ -1,81 +1,323 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted } from 'vue'
+import { onClickOutside } from '@vueuse/core'
+import { useusuarioStore } from '@/stores/usuario'
+import { useRouter } from 'vue-router'
 
-import { onClickOutside } from '@vueuse/core';
-import { useusuarioStore } from '@/stores/usuario';
-import { useRouter } from 'vue-router';
+const usuarioStore = useusuarioStore()
+const router = useRouter() // Ensure router is available
+const showDropdown = ref(false)
+const dropdownRef = ref(null)
+const fileInput = ref(null)
 
-const usuarioStore = useusuarioStore();
+onClickOutside(dropdownRef, () => {
+  showDropdown.value = false
+})
 
-/*const toggleDropdown = () => {
-  showDropdown.value = !showDropdown.value;
-};*/
-console.log(usuarioStore.datosUsuario);
-const logout = () => {
-  usuarioStore.cerrarSesion();
-  //showDropdown.value = false;
-};
+onMounted(() => {
+  usuarioStore.cargarUsuario()
+})
+
+const toggleDropdown = () => {
+  showDropdown.value = !showDropdown.value
+}
+
+const logout = async () => {
+  await usuarioStore.cerrarSesion()
+  showDropdown.value = false
+  router.push('/login')
+}
+
+const triggerFileInput = () => {
+  fileInput.value.click()
+}
+
+const handleFileChange = (event) => {
+  const file = event.target.files[0]
+  if (file) {
+    // TODO: Implement actual upload logic
+    console.log('File selected:', file)
+  }
+}
 </script>
 
 <template>
-  <div ref="dropdownRef" class="auth-container">
-    <div v-if="usuarioStore.cargando" class="auth-loading">
-      <span class="spinner"></span>
+  <div v-if="usuarioStore.cargando" class="auth-loading">
+    <div class="spinner-border text-primary spinner-sm" role="status">
+      <span class="visually-hidden">Cargando...</span>
     </div>
-    <template v-else>
-      <div v-if="!usuarioStore.datosUsuario" class="auth-link" @click="$router.push('/login')">
-        <a>Iniciar Sesión</a>
+  </div>
+
+  <div v-else ref="dropdownRef" class="auth-container">
+    <!-- Si NO está autenticado -->
+    <div v-if="!usuarioStore.datosUsuario" class="auth-link">
+      <router-link to="/login" class="login-btn">Iniciar Sesión</router-link>
+    </div>
+
+    <!-- Si SÍ está autenticado -->
+    <div v-else class="user-dropdown-wrapper">
+      <!-- Trigger: Avatar + Name -->
+      <div class="user-trigger" @click="toggleDropdown">
+        <span class="user-name">{{
+          usuarioStore.datosUsuario.NombreCompleto || usuarioStore.datosUsuario.name
+        }}</span>
+        <img
+          :src="usuarioStore.datosUsuario.FotoPerfilUrl || '/src/assets/img/default-avatar.png'"
+          class="profile-icon-mini"
+          alt="Perfil"
+        />
       </div>
 
-      <div v-else="usuarioStore.datosUsuario" class="user-dropdown" @click="toggleDropdown">
-        <strong>{{ usuarioStore.datosUsuario.NombreCompleto }}</strong>
-        <img :src="usuarioStore.datosUsuario.FotoPerfilUrl" alt="Foto de perfil" class="foto-perfil" />
+      <!-- Dropdown Menu -->
+      <div v-if="showDropdown" class="dropdown-menu-custom">
+        <h2>Mi cuenta</h2>
+
+        <div class="dropdown-user-info">
+          <!-- Profile Picture Upload -->
+          <div class="profile-upload" @click="triggerFileInput">
+            <img
+              :src="
+                usuarioStore.datosUsuario.FotoPerfilUrl || '/src/assets/img/default-avatar.png'
+              "
+              class="profile-dropdown-icon"
+              alt="Foto de perfil"
+            />
+            <div class="edit-overlay"><i class="bi bi-camera"></i></div>
+          </div>
+          <!-- Hidden Input -->
+          <input
+            type="file"
+            ref="fileInput"
+            accept="image/*"
+            style="display: none"
+            @change="handleFileChange"
+          />
+
+          <div class="user-greeting">
+            <p>
+              <strong
+                >¡Hola,
+                {{
+                  usuarioStore.datosUsuario.NombreCompleto || usuarioStore.datosUsuario.name
+                }}!</strong
+              >
+            </p>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <ul class="menu-list">
+          <li>
+            <router-link to="/profile"><span>👤</span> Perfil</router-link>
+          </li>
+          <li>
+            <router-link to="/favoritos"><span>❤️</span> Favoritos</router-link>
+          </li>
+          <li>
+            <router-link to="/mensajes"><span>💬</span> Mensajes</router-link>
+          </li>
+          <li>
+            <router-link to="/mis-compras"><span>🧾</span> Mis compras</router-link>
+          </li>
+
+          <li v-if="usuarioStore.datosUsuario.idRol !== 2">
+            <router-link to="/servicios/crear"><span>➕</span> Añadir Servicio</router-link>
+          </li>
+        </ul>
+
+        <div class="divider"></div>
+
+        <ul class="menu-list">
+          <li>
+            <router-link to="/ayuda"><span>❓</span> Centro de ayuda</router-link>
+          </li>
+        </ul>
+
+        <div class="divider"></div>
+
+        <ul class="menu-list">
+          <li>
+            <a href="#" @click.prevent="logout" class="logout-link">
+              <span>➜</span> Cerrar sesión
+            </a>
+          </li>
+        </ul>
       </div>
-
-    </template>
-
+    </div>
   </div>
 </template>
 
 <style scoped>
-.auth-loading {
-  padding: 8px 12px;
-  min-width: 100px;
-  /* Evita que el contenedor cambie de tamaño bruscamente */
-  display: flex;
-  justify-content: center;
-  align-items: center;
+.auth-container {
+  position: relative;
+  display: inline-block;
 }
-.user-dropdown{
+
+.login-btn {
+  text-decoration: none;
+  color: #2b4ea2;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 20px;
+  transition: background 0.2s;
+}
+.login-btn:hover {
+  background-color: #f0f6ff;
+}
+
+/* Trigger Styles */
+.user-trigger {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 24px;
+  transition: background 0.2s;
+}
+.user-trigger:hover {
+  background-color: #f5f5f5;
 }
 
-.foto-perfil {
-  width: 64px;
-  height: 64px;
+.profile-icon-mini {
+  width: 80px;
+  height: 60px;
   border-radius: 50%;
-  margin-right: 8px;
+  object-fit: cover;
+  border: 1px solid #ddd;
+}
+.user-name {
+  font-weight: 600;
+  color: #333;
+  font-size: 14px;
 }
 
-.spinner {
-  width: 20px;
-  height: 20px;
-  border: 2px solid #f3f3f3;
-  border-top: 2px solid #2b4ea2;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
+/* Dropdown Menu Styles */
+.dropdown-menu-custom {
+  position: absolute;
+  top: 120%;
+  right: 0;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  width: 280px;
+  z-index: 1000;
+  padding: 20px;
+  border: 1px solid #f0f0f0;
+  animation: fadeIn 0.15s ease-out;
 }
 
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
   }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
-  100% {
-    transform: rotate(360deg);
+.dropdown-menu-custom h2 {
+  font-size: 18px;
+  margin: 0 0 16px 0;
+  color: #222;
+}
+
+.dropdown-user-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.profile-upload {
+  position: relative;
+  cursor: pointer;
+  width: 80px;
+  height: 80px;
+  margin-bottom: 10px;
+}
+
+.profile-dropdown-icon {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.edit-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.profile-upload:hover .edit-overlay {
+  opacity: 1;
+}
+
+.user-greeting {
+  text-align: center;
+  font-size: 15px;
+  color: #333;
+}
+
+.divider {
+  height: 1px;
+  background-color: #eee;
+  margin: 8px 0;
+}
+
+/* Menu List */
+.menu-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.menu-list li a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  text-decoration: none;
+  color: #444;
+  font-size: 14px;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.menu-list li a:hover {
+  background-color: #f5f7fa;
+  color: #007bff;
+}
+
+.menu-list li a span {
+  font-size: 16px;
+  width: 24px;
+  text-align: center;
+}
+
+.logout-link {
+  color: #d9534f !important;
+}
+.logout-link:hover {
+  background-color: #fff5f5 !important;
+  color: #c9302c !important;
+}
+
+@media (max-width: 950px) {
+  .user-name {
+    display: none;
   }
 }
 </style>
