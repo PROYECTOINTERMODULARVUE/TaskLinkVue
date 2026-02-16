@@ -35,8 +35,8 @@ import BuscadorComponent from './BuscadorComponent.vue'
 @media (max-width: 600px) {
   .logo-container {
     img {
-      width: 60px;
-      height: 30px;
+      width: 100px;
+      height: 50px;
     }
   }
   .searchBar {

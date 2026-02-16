@@ -32,11 +32,10 @@ const triggerFileInput = () => {
   fileInput.value.click()
 }
 
-const handleFileChange = (event) => {
+const handleFileChange = async (event) => {
   const file = event.target.files[0]
   if (file) {
-    // TODO: Implement actual upload logic
-    console.log('File selected:', file)
+    await usuarioStore.actualizarFotoPerfil(file)
   }
 }
 </script>
@@ -49,14 +48,11 @@ const handleFileChange = (event) => {
   </div>
 
   <div v-else ref="dropdownRef" class="auth-container">
-    <!-- Si NO está autenticado -->
     <div v-if="!usuarioStore.datosUsuario" class="auth-link">
       <router-link to="/login" class="login-btn">Iniciar Sesión</router-link>
     </div>
 
-    <!-- Si SÍ está autenticado -->
     <div v-else class="user-dropdown-wrapper">
-      <!-- Trigger: Avatar + Name -->
       <div class="user-trigger" @click="toggleDropdown">
         <span class="user-name">{{
           usuarioStore.datosUsuario.NombreCompleto || usuarioStore.datosUsuario.name
@@ -68,23 +64,18 @@ const handleFileChange = (event) => {
         />
       </div>
 
-      <!-- Dropdown Menu -->
       <div v-if="showDropdown" class="dropdown-menu-custom">
         <h2>Mi cuenta</h2>
 
         <div class="dropdown-user-info">
-          <!-- Profile Picture Upload -->
           <div class="profile-upload" @click="triggerFileInput">
             <img
-              :src="
-                usuarioStore.datosUsuario.FotoPerfilUrl || '/src/assets/img/default-avatar.png'
-              "
+              :src="usuarioStore.datosUsuario.FotoPerfilUrl || '/src/assets/img/default-avatar.png'"
               class="profile-dropdown-icon"
               alt="Foto de perfil"
             />
             <div class="edit-overlay"><i class="bi bi-camera"></i></div>
           </div>
-          <!-- Hidden Input -->
           <input
             type="file"
             ref="fileInput"
@@ -182,7 +173,7 @@ const handleFileChange = (event) => {
 
 .profile-icon-mini {
   width: 80px;
-  height: 60px;
+  height: 80px;
   border-radius: 50%;
   object-fit: cover;
   border: 1px solid #ddd;
@@ -317,6 +308,13 @@ const handleFileChange = (event) => {
 
 @media (max-width: 950px) {
   .user-name {
+    display: none;
+  }
+  .profile-icon-mini {
+    width: 40px;
+    height: 40px;
+  }
+  .dropdown-user-info .profile-upload {
     display: none;
   }
 }

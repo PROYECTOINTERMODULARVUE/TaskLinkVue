@@ -4,12 +4,12 @@ const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 
 const apiClient = axios.create({
     baseURL: `${SERVER_URL}api`,
-    withCredentials: true,withXSRFToken: true,
+    withCredentials: true, withXSRFToken: true,
     headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json',
         'X-Requested-With': 'XMLHttpRequest'
-        
+
     }
 });
 
@@ -60,11 +60,14 @@ const usuarios = {
     getUsuarioActual: () => extractData(apiClient.get('/usuario')),     // → /api/usuario
     desloguear: () => extractData(webClient.post('/logout')),          // → /logout
     login: async (credentials) => {
-        // 1️⃣ Obtener CSRF token
-        await webClient.get('/sanctum/csrf-cookie'); // Laravel lo expone aquí
-        // 2️⃣ Enviar login con las cookies ya seteadas
+        await webClient.get('/sanctum/csrf-cookie');
         return extractData(webClient.post('/login', credentials));
-    }
+    },
+    updateProfilePhoto: (formData) => extractData(apiClient.post('/perfil/foto', formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data'
+        }
+    }))
 }
 
 

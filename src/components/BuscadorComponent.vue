@@ -218,28 +218,38 @@ const resetFiltros = () => {
 
 /* ----------------- ESTILOS MOBILE TRIGGER ----------------- */
 .mobileSearch {
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  border: 1px solid #f0f0f0;
+  box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3); /* Blue shadow */
+  border: none;
   border-radius: 24px;
   padding: 10px 20px;
-  background: white;
+  background: #007bff; /* Blue background */
   display: flex;
   align-items: center;
-  justify-content: center; /* Centrado */
+  justify-content: center;
   gap: 12px;
   width: 100%;
-  max-width: 400px; /* No muy ancho */
+  max-width: 400px;
   margin: 0 auto;
   height: 50px;
+  transition:
+    transform 0.2s,
+    background-color 0.2s;
 }
+
+.mobileSearch:hover {
+  background-color: #0056b3;
+  transform: translateY(-2px);
+}
+
 .mobileSearch i {
   font-weight: 900;
-  color: #007bff;
+  color: white; /* White icon */
+  font-size: 18px;
 }
 .mobileSearch span {
   font-weight: 600;
-  color: #222;
-  font-size: 14px;
+  color: white; /* White text */
+  font-size: 16px;
 }
 
 /* ----------------- ESTILOS PANEL MOBILE (OVERLAY) ----------------- */
@@ -295,7 +305,12 @@ const resetFiltros = () => {
 }
 
 .tarjetaFiltro.activa {
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 6px 20px rgba(0, 123, 255, 0.15);
+  border: 2px solid #007bff;
+}
+
+.tarjetaFiltro.activa h2 {
+  color: #007bff;
 }
 
 .resumen {

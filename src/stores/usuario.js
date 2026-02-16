@@ -50,6 +50,22 @@ export const useusuarioStore = defineStore('usuario', {
                 this.cargando = false;
             }
         },
+
+        async actualizarFotoPerfil(file) {
+            this.cargando = true;
+            try {
+                const formData = new FormData();
+                formData.append('foto_perfil', file);
+                await api.usuarios.updateProfilePhoto(formData);
+                await this.cargarUsuario(); // Reload user data to get new image URL
+                return { success: true };
+            } catch (error) {
+                console.error("Error updating profile photo:", error);
+                return { success: false, error };
+            } finally {
+                this.cargando = false;
+            }
+        },
         agregarMensaje(texto, tipo) {
             const mensaje = {
                 id: Date.now(),
