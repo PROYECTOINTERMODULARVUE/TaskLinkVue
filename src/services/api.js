@@ -3,13 +3,25 @@ const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 
 
 const apiClient = axios.create({
+    baseURL: `${SERVER_URL}api`,
+    withCredentials: true,
+    headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+    }
+});
+
+const webClient = axios.create({
     baseURL: SERVER_URL,
     withCredentials: true,
     headers: {
         Accept: 'application/json',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
     }
 });
+
 const extractData = async (promise) => {
     const response = await promise;
     return response.data;
@@ -43,8 +55,14 @@ const categorias = {
     delete: (id) => extractData(apiClient.delete(`/categorias/${id}`)),
 }
 const usuarios = {
-    getUsuarioActual: () => extractData(apiClient.get('/usuario')),
-    desloguear: () => extractData(apiClient.post('/logout'))
+    getUsuarioActual: () => extractData(apiClient.get('/usuario')),     // → /api/usuario
+    desloguear: () => extractData(webClient.post('/logout')),          // → /logout
+    login: async (credentials) => {
+        // 1️⃣ Obtener CSRF token
+        await webClient.get('/sanctum/csrf-cookie'); // Laravel lo expone aquí
+        // 2️⃣ Enviar login con las cookies ya seteadas
+        return extractData(webClient.post('/login', credentials));
+    }
 }
 
 

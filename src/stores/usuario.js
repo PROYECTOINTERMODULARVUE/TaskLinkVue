@@ -12,7 +12,7 @@ export const useusuarioStore = defineStore('usuario', {
         async cargarUsuario() {
             this.cargando = true;
             try {
-                this.datosUsuario = await api.user.getCurrent();
+                this.datosUsuario = await api.usuarios.getUsuarioActual();
             } catch (error) {
                 this.datosUsuario = null;
             } finally {
@@ -22,11 +22,32 @@ export const useusuarioStore = defineStore('usuario', {
 
         async cerrarSesion() {
             try {
-                await api.user.logout();
+                await api.usuarios.desloguear();
                 this.datosUsuario = null;
             } catch (error) {
                 console.error("Error al cerrar sesión:", error);
                 this.datosUsuario = null;
+            }
+        },
+        async iniciarSesion(credentials) {
+            this.cargando = true;
+            try {
+                // Llamamos al endpoint de login de Laravel
+                await api.usuarios.login(credentials);
+                // Si el login es exitoso, cargamos los datos del usuario
+                await this.cargarUsuario();
+                return { success: true };
+            } catch (error) {
+                console.error("Error en el login:", error);
+                let mensaje = "Error desconocido al iniciar sesión.";
+                if (error.response?.status === 422) {
+                    mensaje = "Credenciales inválidas.";
+                } else if (error.response?.status === 401) {
+                    mensaje = "Correo o contraseña incorrectos.";
+                }
+                return { success: false, message: mensaje };
+            } finally {
+                this.cargando = false;
             }
         },
         agregarMensaje(texto, tipo) {

@@ -1,11 +1,12 @@
 <script setup>
+import { useRoute } from 'vue-router';
 import AppMenu from './components/AppMenu.vue';
-import router from './router';
+const route =useRoute();
 
 </script>
 
 <template>
-  <header>
+  <header v-if="route.path !== '/login'">
     <AppMenu />
   </header>
   <main>
