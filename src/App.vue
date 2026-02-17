@@ -1,22 +1,23 @@
 <script setup>
-import { useRoute } from 'vue-router';
-import AppMenu from './components/AppMenu.vue';
-import { useusuarioStore } from './stores/usuario';
-import { onMounted } from 'vue';
-const route = useRoute();
+import { useRoute } from 'vue-router'
+import AppMenu from './components/header/AppMenu.vue'
+import { useusuarioStore } from './stores/usuario'
+import { onMounted } from 'vue'
+const route = useRoute()
 
-const usuarioStore = useusuarioStore();
+const usuarioStore = useusuarioStore()
+
+const rutasSinHeader = ['/login', '/registro', '/restablecer-contraseña']
 
 onMounted(async () => {
   if (!usuarioStore.datosUsuario) {
-    await usuarioStore.cargarUsuario();
+    await usuarioStore.cargarUsuario()
   }
-});
-
+})
 </script>
 
 <template>
-  <header v-if="route.path !== '/login'">
+  <header v-if="!rutasSinHeader.includes(route.path)">
     <AppMenu />
   </header>
   <main>

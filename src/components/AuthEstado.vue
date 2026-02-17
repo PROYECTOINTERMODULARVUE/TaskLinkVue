@@ -115,7 +115,7 @@ const handleFileChange = (event) => {
 
         <ul class="menu-list">
           <li>
-            <router-link to="/profile"><span>👤</span> Perfil</router-link>
+            <router-link to="/perfil"><span>👤</span> Perfil</router-link>
           </li>
           <li>
             <router-link to="/favoritos"><span>❤️</span> Favoritos</router-link>

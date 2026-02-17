@@ -1,6 +1,8 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { usezonasStore } from '@/stores/zona'
+import { useRouter } from 'vue-router'
+import { useserviciosStore } from '@/stores/servicio'
 
 const props = defineProps({
   servicio: {
@@ -11,10 +13,8 @@ const props = defineProps({
 
 const zonasStore = usezonasStore()
 const direccion = ref('Cargando ubicación...')
+const router = useRouter()
 
-/**
- * Calcula la distancia entre dos puntos (haversine formula)
- */
 const calcularDistancia = (lat1, lon1, lat2, lon2) => {
   const R = 6371 // Radio de la Tierra en km
   const dLat = (lat2 - lat1) * (Math.PI / 180)
@@ -61,6 +61,20 @@ const obtenerDireccion = async () => {
   }
 }
 
+const servicioStore = useserviciosStore()
+
+const verServicio = (idServicio) => {
+  console.log(idServicio)
+  servicioStore.setServicioPasado(props.servicio)
+  router.push(`/servicio/${idServicio}`)
+}
+
+const reservarServicio = () => {
+  alert(
+    `Iniciando reserva para: ${props.servicio.Nombre}. Te redirigimos a los detalles para completar el proceso.`,
+  )
+}
+
 onMounted(() => {
   obtenerDireccion()
   console.log(props.servicio)
@@ -68,9 +82,9 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="servicio-card">
+  <div class="servicio-card" @click="verServicio(servicio.IDServicio)">
     <div class="servicio-image">
-      <img :src="servicio.imagen_url" alt="Servicio" />
+      <img :src="servicio.imagen_url || servicio.categoria.imagen_url" alt="Servicio" />
       <span class="price-tag">{{ servicio.Precio }}€</span>
     </div>
 
@@ -84,6 +98,9 @@ onMounted(() => {
       <div class="servicio-rating">
         <i class="bi bi-star-fill"></i> <span>{{ servicio.promedio_valoracion }}</span>
       </div>
+    </div>
+    <div class="servicio-actions">
+      <button class="btn btn-primary" @click.stop="reservarServicio">Reservar</button>
     </div>
   </div>
 </template>
@@ -165,5 +182,18 @@ onMounted(() => {
 }
 .servicio-rating i {
   color: #ffc107;
+}
+
+.servicio-actions {
+  display: flex;
+  justify-content: center;
+  padding: 6px;
+  border-radius: 6px;
+}
+.servicio-actions button {
+  width: 100%;
+}
+.servicio-actions button:hover {
+  background-color: #2b4ea2;
 }
 </style>

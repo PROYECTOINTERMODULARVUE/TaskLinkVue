@@ -6,6 +6,7 @@ export const useserviciosStore = defineStore('servicios', {
         debug: true,
         servicios: [],
         servicioEnEdicion: null,
+        servicioPasado: null,
         mensajes: []
     }),
 
@@ -68,6 +69,10 @@ export const useserviciosStore = defineStore('servicios', {
             } catch (error) {
                 this.agregarMensaje("Error al actualizar servicio: " + error, "error");
             }
+        },
+        setServicioPasado(servicio) {
+            if (this.debug) console.log("setServicioPasado triggered", servicio);
+            this.servicioPasado = servicio;
         },
         agregarMensaje(texto, tipo) {
             const mensaje = {

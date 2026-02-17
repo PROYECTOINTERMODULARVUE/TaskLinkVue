@@ -1,7 +1,11 @@
+import { createRouter, createWebHistory } from 'vue-router'
 import LoginView from '@/views/LoginView.vue'
 import PaginaPrincipalView from '@/views/PaginaPrincipalView.vue'
 import PathNotFound from '@/views/PathNotFound.vue'
-import { createRouter, createWebHistory } from 'vue-router'
+import RegisterView from '@/views/RegisterView.vue'
+import ServicioView from '@/views/ServicioView.vue'
+import { useusuarioStore } from '@/stores/usuario'
+import { useRolStore } from '@/stores/rol' // Import rol store
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -11,16 +15,78 @@ const router = createRouter({
       name: 'home',
       component: PaginaPrincipalView
     },
-     {
+    {
+      path: '/servicio/:id',
+      name: 'servicio',
+      component: ServicioView
+    },
+    {
       path: '/:pathMatch(.*)*',
       component: PathNotFound
     },
     {
       path: '/login',
       name: 'login',
-      component:LoginView
+      component: LoginView
+    },
+    {
+      path: '/registro',
+      name: 'registro',
+      component: RegisterView
+    },
+    {
+      path: '/servicios/crear',
+      name: 'crear-servicio',
+      component: () => import('@/views/ServicioCrearView.vue'), // Lazy load if exists, or create it
+      meta: { requiresRole: ['admin', 'creadorServicio'] }
+    },
+    {
+      path: '/admin/usuarios',
+      name: 'admin-usuarios',
+      component: () => import('@/views/AdminUsersView.vue'),
+      meta: { requiresRole: ['admin'] }
+    },
+    {
+      path: '/perfil',
+      name: 'perfil',
+      component: () => import('@/views/ProfileShowView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/perfil/editar',
+      name: 'perfil-editar',
+      component: () => import('@/views/ProfileEditView.vue'),
+      meta: { requiresAuth: true }
     }
   ],
+})
+
+router.beforeEach(async (to, from, next) => {
+  const usuarioStore = useusuarioStore()
+  const rolStore = useRolStore()
+
+  // Wait for user to be loaded if not already
+  if (usuarioStore.cargando) {
+    // Logic to wait or ensure user is loaded could be here,
+    // but for now we assume 'cargarUsuario' is called at app start.
+    // Better: await usuarioStore.cargarUsuario() if we can, but beforeEach is sync/async.
+    if (!usuarioStore.datosUsuario) {
+      await usuarioStore.cargarUsuario()
+    }
+  }
+
+  if (to.meta.requiresRole) {
+    if (!usuarioStore.datosUsuario) {
+      return next({ name: 'login' })
+    }
+
+    // Use rolStore to check permissions
+    const requiredRoles = to.meta.requiresRole
+    if (!rolStore.hasRole(requiredRoles)) {
+      return next({ name: 'home' }) // Or 'access-denied' page
+    }
+  }
+  next()
 })
 
 export default router

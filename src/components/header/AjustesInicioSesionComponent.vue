@@ -2,9 +2,11 @@
 import { ref, onMounted } from 'vue'
 import { onClickOutside } from '@vueuse/core'
 import { useusuarioStore } from '@/stores/usuario'
+import { useRolStore } from '@/stores/rol' // Import rol store
 import { useRouter } from 'vue-router'
 
 const usuarioStore = useusuarioStore()
+const rolStore = useRolStore() // Initialize rol store
 const router = useRouter() // Ensure router is available
 const showDropdown = ref(false)
 const dropdownRef = ref(null)
@@ -16,6 +18,7 @@ onClickOutside(dropdownRef, () => {
 
 onMounted(() => {
   usuarioStore.cargarUsuario()
+  console.log(usuarioStore.datosUsuario)
 })
 
 const toggleDropdown = () => {
@@ -25,7 +28,7 @@ const toggleDropdown = () => {
 const logout = async () => {
   await usuarioStore.cerrarSesion()
   showDropdown.value = false
-  router.push('/login')
+  router.push('/')
 }
 
 const triggerFileInput = () => {
@@ -100,20 +103,24 @@ const handleFileChange = async (event) => {
 
         <ul class="menu-list">
           <li>
-            <router-link to="/profile"><span>👤</span> Perfil</router-link>
+            <a @click="$router.push('/perfil')"><span>👤 </span> Perfil</a>
           </li>
           <li>
-            <router-link to="/favoritos"><span>❤️</span> Favoritos</router-link>
+            <a @click="$router.push('/favoritos')"><span>❤️</span> Favoritos</a>
           </li>
           <li>
-            <router-link to="/mensajes"><span>💬</span> Mensajes</router-link>
+            <a @click="$router.push('/mensajes')"><span>💬</span> Mensajes</a>
           </li>
           <li>
-            <router-link to="/mis-compras"><span>🧾</span> Mis compras</router-link>
+            <a @click="$router.push('/mis-compras')"><span>🧾</span> Mis compras</a>
           </li>
 
-          <li v-if="usuarioStore.datosUsuario.idRol !== 2">
-            <router-link to="/servicios/crear"><span>➕</span> Añadir Servicio</router-link>
+          <li v-if="rolStore.isAdmin">
+            <a @click="$router.push('/admin/usuarios')"><span>👥</span> Usuarios</a>
+          </li>
+
+          <li v-if="rolStore.canCreateService">
+            <a @click="$router.push('/servicios/crear')"><span>➕</span> Añadir Servicio</a>
           </li>
         </ul>
 
@@ -121,7 +128,7 @@ const handleFileChange = async (event) => {
 
         <ul class="menu-list">
           <li>
-            <router-link to="/ayuda"><span>❓</span> Centro de ayuda</router-link>
+            <a @click="$router.push('/ayuda')"><span>❓</span> Centro de ayuda</a>
           </li>
         </ul>
 
@@ -147,14 +154,19 @@ const handleFileChange = async (event) => {
 
 .login-btn {
   text-decoration: none;
-  color: #2b4ea2;
+  color: #222;
   font-weight: 600;
   padding: 8px 16px;
   border-radius: 20px;
-  transition: background 0.2s;
+  transition: all 0.2s;
+  white-space: nowrap;
+  border: 1px solid #ddd;
+  background-color: #fff;
+  font-size: 14px;
 }
 .login-btn:hover {
-  background-color: #f0f6ff;
+  background-color: #f7f7f7;
+  border-color: #222;
 }
 
 /* Trigger Styles */
@@ -307,15 +319,25 @@ const handleFileChange = async (event) => {
 }
 
 @media (max-width: 950px) {
+  .user-trigger {
+    padding: 2px 4px;
+    gap: 4px;
+  }
   .user-name {
     display: none;
   }
   .profile-icon-mini {
-    width: 40px;
-    height: 40px;
+    width: 32px;
+    height: 32px;
   }
   .dropdown-user-info .profile-upload {
     display: none;
+  }
+  .login-btn {
+    padding: 6px 10px;
+    font-size: 13px;
+    background-color: #f8f9fa;
+    border: 1px solid #ddd;
   }
 }
 </style>

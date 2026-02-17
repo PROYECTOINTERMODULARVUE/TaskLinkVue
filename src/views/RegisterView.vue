@@ -6,16 +6,31 @@ import * as yup from 'yup'
 
 const usuarioStore = useusuarioStore()
 const router = useRouter()
-const loguearse = async (values) => {
-  console.log('Formulario enviado con:', values)
-  const resultado = await usuarioStore.iniciarSesion(values)
+
+const registrarUsuario = async (values) => {
+  console.log('Registrando usuario:', values)
+  // Mapeamos los campos al formato que espera el backend si es necesario
+  const userData = {
+    name: values.name,
+    email: values.email,
+    password: values.password,
+    password_confirmation: values.confirmPassword,
+  }
+
+  const resultado = await usuarioStore.registrar(userData)
   if (resultado.success) {
     router.push('/')
   } else {
-    console.error('Error de login:', resultado.error)
+    // Aquí se podría mostrar un mensaje de error global
+    alert(resultado.message || 'Error al registrar el usuario')
   }
 }
+
 const schema = yup.object({
+  name: yup
+    .string()
+    .required('El nombre completo es obligatorio')
+    .min(3, 'El nombre debe tener al menos 3 caracteres'),
   email: yup
     .string()
     .required('El correo es obligatorio')
@@ -23,52 +38,67 @@ const schema = yup.object({
   password: yup
     .string()
     .required('La contraseña es obligatoria')
-    .min(6, 'La contraseña debe tener al menos 6 caracteres')
-    .max(50, 'La contraseña debe tener máximo 50 caracteres'),
+    .min(8, 'La contraseña debe tener al menos 8 caracteres'),
+  confirmPassword: yup
+    .string()
+    .oneOf([yup.ref('password'), null], 'Las contraseñas no coinciden')
+    .required('Debes confirmar tu contraseña'),
 })
 </script>
+
 <template>
   <div class="login-container">
     <div class="image-container">
       <div>
         <img
           :src="'/src/assets/img/InicioSesion.png'"
-          alt="Imagen de inicio de sesión"
+          alt="Registro TaskLink"
           class="login-image"
         />
       </div>
     </div>
     <div class="formulario-container">
       <div>
-        <h1>Bienvenido a TASKLINK</h1>
-        <p>Inicia sesión para acceder a tu cuenta, descubrir nuevas oportunidades laborales.</p>
+        <h1>Únete a TASKLINK</h1>
+        <p>
+          Crea tu cuenta hoy mismo y empieza a conectar con los mejores servicios o a ofrecer los
+          tuyos.
+        </p>
+
         <div class="informaciónFormulario">
-          <Form @submit="loguearse" class="formulario" :validation-schema="schema">
-            <div>
-              <div>
-                <p>Correo Electronico</p>
-                <Field name="email" type="email" placeholder="Ingresa tu correo electrónico" />
-              </div>
+          <Form @submit="registrarUsuario" class="formulario" :validation-schema="schema">
+            <div class="form-group">
+              <p>Nombre Completo</p>
+              <Field name="name" type="text" placeholder="Escribe tu nombre y apellidos" />
+              <ErrorMessage name="name" class="error-message" />
+            </div>
+
+            <div class="form-group">
+              <p>Correo Electrónico</p>
+              <Field name="email" type="email" placeholder="ejemplo@correo.com" />
               <ErrorMessage name="email" class="error-message" />
             </div>
 
-            <div>
-              <div>
-                <p>Contraseña</p>
-                <Field name="password" type="password" placeholder="Ingresa tu contraseña" />
-              </div>
+            <div class="form-group">
+              <p>Contraseña</p>
+              <Field name="password" type="password" placeholder="Mínimo 8 caracteres" />
               <ErrorMessage name="password" class="error-message" />
             </div>
 
-            <button type="submit">Iniciar Sesión</button>
+            <div class="form-group">
+              <p>Confirmar Contraseña</p>
+              <Field name="confirmPassword" type="password" placeholder="Repite tu contraseña" />
+              <ErrorMessage name="confirmPassword" class="error-message" />
+            </div>
+
+            <button type="submit" :disabled="usuarioStore.cargando">
+              {{ usuarioStore.cargando ? 'Registrando...' : 'Crear Cuenta' }}
+            </button>
+
             <div class="login-footer-links">
-              <a class="contraOlvidada" @click="router.push('/restablecer-contraseña')"
-                >¿Olvidaste tu contraseña?</a
-              >
-              <div class="divider-small"></div>
               <p class="registro-prompt">
-                ¿No tienes cuenta?
-                <a class="noTienesCuenta" @click="router.push('/registro')">Regístrate ahora</a>
+                ¿Ya tienes una cuenta?
+                <a class="noTienesCuenta" @click="router.push('/login')">Inicia sesión</a>
               </p>
             </div>
           </Form>
@@ -77,8 +107,9 @@ const schema = yup.object({
     </div>
   </div>
 </template>
+
 <style scoped>
-/* Contenedor de la página */
+/* Copiamos y adaptamos los estilos de LoginView para mantener la consistencia */
 .login-container {
   display: grid;
   grid-template-columns: 40% 60%;
@@ -89,7 +120,6 @@ const schema = yup.object({
   font-family: 'Segoe UI', sans-serif;
 }
 
-/* Contenedor izquierdo - imagen */
 .image-container {
   position: relative;
   overflow: hidden;
@@ -101,34 +131,23 @@ const schema = yup.object({
   box-shadow: inset -5px 0 20px rgba(0, 0, 0, 0.1);
 }
 
-/* Imagen con animación y efecto hover */
 .login-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 0;
-  /* ya tiene el contenedor redondeado */
   transition:
     transform 0.6s ease,
     filter 0.6s ease;
   animation: float 15s ease-in-out infinite alternate;
 }
 
-/* Animación flotante sutil */
 @keyframes float {
   0% {
     transform: scale(1) translateY(0);
   }
-
   100% {
     transform: scale(1.03) translateY(-10px);
   }
-}
-
-/* Zoom sutil al pasar el mouse */
-.image-container:hover .login-image {
-  transform: scale(1.05);
-  filter: brightness(1.1);
 }
 
 .image-container::after {
@@ -142,41 +161,24 @@ const schema = yup.object({
   z-index: 1;
 }
 
-/* Si quieres agregar texto encima de la imagen */
-.image-container div {
-  position: relative;
-  z-index: 2;
-}
-
-.logo-text h1 {
-  font-size: 3rem;
-  font-weight: 700;
-  margin-bottom: 10px;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-}
-
-.logo-text p {
-  font-size: 1.2rem;
-  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.4);
-}
-
 .formulario-container {
   display: flex;
   justify-content: center;
   align-items: center;
   background-color: #f9fbff;
   padding: 2.5rem;
-  font-family: 'Segoe UI', system-ui, sans-serif;
+  overflow-y: auto; /* Permitir scroll si el contenido es muy alto */
 }
 
 .formulario-container > div {
   width: 100%;
-  max-width: 500px; /* Aumentado de 420px */
+  max-width: 500px;
   text-align: center;
+  padding: 20px 0;
 }
 
 .formulario-container h1 {
-  font-size: 2.5rem; /* Aumentado ligeramente */
+  font-size: 2.5rem;
   font-weight: 700;
   color: #2b4ea2;
   margin-bottom: 0.75rem;
@@ -190,38 +192,24 @@ const schema = yup.object({
   line-height: 1.5;
 }
 
-/* Contenedor del formulario */
-.informaciónFormulario {
-  width: 100%;
-}
-
-/* Estilo de los campos dentro del formulario */
-.formulario > div {
-  margin-bottom: 1.5rem;
+.form-group {
+  margin-bottom: 1.25rem;
   text-align: left;
 }
 
-.formulario > div > div {
-  margin-bottom: 0.5rem;
-}
-
-.formulario p {
+.form-group p {
   font-size: 0.95rem;
   font-weight: 600;
   color: #333;
   margin: 0 0 0.5rem 0;
 }
 
-/* Campos de entrada */
-.formulario input[type='email'],
-/* Campos de entrada más grandes */
-.formulario input[type="email"],
-.formulario input[type="password"] {
+.formulario input {
   width: 100%;
-  padding: 1rem 1.2rem; /* Aumentado */
+  padding: 1rem 1.2rem;
   border: 1px solid #d1d5db;
-  border-radius: 12px; /* Más redondeado */
-  font-size: 1.1rem; /* Más grande */
+  border-radius: 12px;
+  font-size: 1.1rem;
   background-color: #fff;
   transition:
     border-color 0.3s,
@@ -230,29 +218,25 @@ const schema = yup.object({
   box-sizing: border-box;
 }
 
-.formulario input[type='email']:focus,
-.formulario input[type='password']:focus {
+.formulario input:focus {
   border-color: #4f7cff;
   box-shadow: 0 0 0 3px rgba(79, 124, 255, 0.2);
 }
 
-/* Mensajes de error */
 .error-message {
   display: block;
   color: #e53e3e;
   font-size: 0.875rem;
   margin-top: 0.375rem;
   font-weight: 500;
-  text-align: left;
 }
 
-/* Botón más grande */
-.formulario button[type='submit'] {
+button[type='submit'] {
   width: 100%;
-  padding: 1.1rem; /* Aumentado */
+  padding: 1.1rem;
   background: linear-gradient(135deg, #2b4ea2, #4f7cff);
   color: white;
-  font-size: 1.2rem; /* Más grande */
+  font-size: 1.2rem;
   font-weight: 600;
   border: none;
   border-radius: 12px;
@@ -265,14 +249,38 @@ const schema = yup.object({
   margin-top: 1rem;
 }
 
-.formulario button[type='submit']:hover {
+button[type='submit']:hover:not(:disabled) {
   transform: translateY(-2px);
   opacity: 0.95;
   box-shadow: 0 6px 16px rgba(43, 78, 162, 0.4);
 }
 
-.formulario button[type='submit']:active {
-  transform: translateY(0);
+button[type='submit']:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.login-footer-links {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.registro-prompt {
+  font-size: 0.95rem;
+  color: #666;
+}
+
+.noTienesCuenta {
+  color: #2b4ea2;
+  font-weight: 700;
+  cursor: pointer;
+  margin-left: 4px;
+}
+
+.noTienesCuenta:hover {
+  text-decoration: underline;
 }
 
 /* Tablet y dispositivos medianos */
@@ -299,14 +307,14 @@ const schema = yup.object({
   }
 
   .image-container {
-    height: 280px;
+    height: 250px;
     border-radius: 0 0 30px 30px;
     border-top-right-radius: 0;
   }
 
   .formulario-container {
     padding: 2.5rem 2rem;
-    min-height: calc(100vh - 280px);
+    min-height: calc(100vh - 250px);
   }
 
   .formulario-container h1 {
@@ -320,13 +328,14 @@ const schema = yup.object({
 
   .formulario-container > div {
     max-width: 450px;
+    padding: 15px 0;
   }
 }
 
 /* Móviles */
 @media (max-width: 767px) {
   .image-container {
-    height: 220px;
+    height: 200px;
     border-radius: 0 0 20px 20px;
   }
 
@@ -344,30 +353,33 @@ const schema = yup.object({
     margin-bottom: 1.25rem;
   }
 
-  .formulario input[type='email'],
-  .formulario input[type='password'] {
+  .formulario-container > div {
+    padding: 10px 0;
+  }
+
+  .form-group {
+    margin-bottom: 1rem;
+  }
+
+  .form-group p {
+    font-size: 0.9rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .formulario input {
     padding: 0.9rem 1rem;
     font-size: 1rem;
     border-radius: 10px;
   }
 
-  .formulario button[type='submit'] {
+  button[type='submit'] {
     padding: 1rem;
     font-size: 1.1rem;
     border-radius: 10px;
   }
 
-  .formulario > div {
-    margin-bottom: 1.25rem;
-  }
-
   .login-footer-links {
     margin-top: 1.25rem;
-    gap: 10px;
-  }
-
-  .contraOlvidada {
-    font-size: 0.85rem;
   }
 
   .registro-prompt {
@@ -378,7 +390,7 @@ const schema = yup.object({
 /* Móviles pequeños */
 @media (max-width: 480px) {
   .image-container {
-    height: 180px;
+    height: 160px;
     border-radius: 0 0 15px 15px;
   }
 
@@ -397,19 +409,23 @@ const schema = yup.object({
 
   .formulario-container > div {
     max-width: 100%;
+    padding: 5px 0;
   }
 
-  .formulario p {
-    font-size: 0.9rem;
+  .form-group {
+    margin-bottom: 0.9rem;
   }
 
-  .formulario input[type='email'],
-  .formulario input[type='password'] {
+  .form-group p {
+    font-size: 0.85rem;
+  }
+
+  .formulario input {
     padding: 0.85rem 1rem;
     font-size: 0.95rem;
   }
 
-  .formulario button[type='submit'] {
+  button[type='submit'] {
     padding: 0.95rem;
     font-size: 1rem;
   }
@@ -421,6 +437,10 @@ const schema = yup.object({
 
 /* Móviles muy pequeños */
 @media (max-width: 360px) {
+  .image-container {
+    height: 140px;
+  }
+
   .formulario-container {
     padding: 1.25rem 0.75rem;
   }
@@ -433,63 +453,22 @@ const schema = yup.object({
     font-size: 0.8rem;
   }
 
-  .formulario input[type='email'],
-  .formulario input[type='password'] {
+  .form-group {
+    margin-bottom: 0.8rem;
+  }
+
+  .form-group p {
+    font-size: 0.8rem;
+  }
+
+  .formulario input {
     padding: 0.8rem 0.9rem;
     font-size: 0.9rem;
   }
 
-  .formulario button[type='submit'] {
+  button[type='submit'] {
     padding: 0.9rem;
     font-size: 0.95rem;
   }
-}
-
-/* Enlaces de pie de página del login */
-.login-footer-links {
-  margin-top: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-}
-
-.contraOlvidada {
-  font-size: 0.9rem;
-  color: #4f7cff;
-  cursor: pointer;
-  font-weight: 500;
-  transition: color 0.2s;
-  text-decoration: none;
-}
-
-.contraOlvidada:hover {
-  color: #2b4ea2;
-  text-decoration: underline;
-}
-
-.divider-small {
-  width: 40px;
-  height: 1px;
-  background-color: #e2e8f0;
-}
-
-.registro-prompt {
-  font-size: 0.95rem;
-  color: #666;
-  margin-bottom: 0 !important;
-}
-
-.noTienesCuenta {
-  color: #2b4ea2;
-  font-weight: 700;
-  cursor: pointer;
-  transition: opacity 0.2s;
-  margin-left: 4px;
-}
-
-.noTienesCuenta:hover {
-  text-decoration: underline;
-  opacity: 0.8;
 }
 </style>

@@ -78,7 +78,6 @@ const resetFiltros = () => {
           </div>
         </div>
 
-        <!-- FECHA -->
         <div
           class="tarjetaFiltro"
           :class="{ activa: pasoActivo === 'fecha' }"
@@ -94,7 +93,6 @@ const resetFiltros = () => {
           </div>
         </div>
 
-        <!-- SERVICIO -->
         <div
           class="tarjetaFiltro"
           :class="{ activa: pasoActivo === 'servicio' }"
@@ -168,9 +166,6 @@ const resetFiltros = () => {
   display: block;
 }
 
-/* Forzar estilos en los componentes hijos si es necesario, 
-   o asumir que renderizan texto/inputs limpios 
-*/
 :deep(.selector-input input) {
   border: none;
   padding: 0;
@@ -194,7 +189,7 @@ const resetFiltros = () => {
 }
 
 .buscarBtn {
-  background-color: #007bff; /* Blue */
+  background-color: #007bff;
   color: white;
   border: none;
   border-radius: 50%;
@@ -204,8 +199,8 @@ const resetFiltros = () => {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 20px; /* Icono más grande */
-  margin-left: 8px; /* Separacion del ultimo item */
+  font-size: 20px;
+  margin-left: 8px;
   transition:
     transform 0.2s,
     background-color 0.2s;
@@ -216,13 +211,12 @@ const resetFiltros = () => {
   transform: scale(1.05);
 }
 
-/* ----------------- ESTILOS MOBILE TRIGGER ----------------- */
 .mobileSearch {
-  box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3); /* Blue shadow */
+  box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3);
   border: none;
   border-radius: 24px;
   padding: 10px 20px;
-  background: #007bff; /* Blue background */
+  background: #007bff;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -381,6 +375,24 @@ const resetFiltros = () => {
 }
 
 @media (max-width: 950px) {
+  .mobileSearch {
+    max-width: none;
+    font-size: 14px;
+    padding: 10px 15px;
+    width: auto;
+    height: 45px;
+    margin: 0 auto;
+    white-space: nowrap;
+    flex-wrap: nowrap;
+
+    span {
+      font-size: 14px;
+      white-space: nowrap;
+    }
+    i {
+      font-size: 16px;
+    }
+  }
   .desktopOnly {
     display: none;
   }

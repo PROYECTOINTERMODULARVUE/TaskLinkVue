@@ -51,6 +51,28 @@ export const useusuarioStore = defineStore('usuario', {
             }
         },
 
+        async registrar(userData) {
+            this.cargando = true;
+            try {
+                await api.usuarios.register(userData);
+                await this.cargarUsuario();
+                return { success: true };
+            } catch (error) {
+                console.error("Error en el registro:", error);
+                let mensaje = "Error al crear la cuenta.";
+                if (error.response?.status === 422) {
+                    mensaje = "Los datos proporcionados no son válidos.";
+                    if (error.response.data.errors) {
+                        const firstError = Object.values(error.response.data.errors)[0][0];
+                        mensaje = firstError;
+                    }
+                }
+                return { success: false, message: mensaje };
+            } finally {
+                this.cargando = false;
+            }
+        },
+
         async actualizarFotoPerfil(file) {
             this.cargando = true;
             try {
