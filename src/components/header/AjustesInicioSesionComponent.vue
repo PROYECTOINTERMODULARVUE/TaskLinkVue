@@ -116,7 +116,7 @@ const handleFileChange = async (event) => {
           </li>
 
           <li v-if="rolStore.isAdmin">
-            <a @click="$router.push('/admin/usuarios')"><span>👥</span> Usuarios</a>
+            <a @click="$router.push('/admin/configuracion-web')"><span>👥</span> Configuración Web</a>
           </li>
 
           <li v-if="rolStore.canCreateService">

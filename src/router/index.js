@@ -41,9 +41,9 @@ const router = createRouter({
       meta: { requiresRole: ['admin', 'creadorServicio'] }
     },
     {
-      path: '/admin/usuarios',
-      name: 'admin-usuarios',
-      component: () => import('@/views/AdminUsersView.vue'),
+      path: '/admin/configuracion-web',
+      name: 'configuracion-web',
+      component: () => import('@/views/AdminConfigView.vue'),
       meta: { requiresRole: ['admin'] }
     },
     {
@@ -57,6 +57,11 @@ const router = createRouter({
       name: 'perfil-editar',
       component: () => import('@/views/ProfileEditView.vue'),
       meta: { requiresAuth: true }
+    },
+    {
+      path: '/ayuda',
+      name: 'ayuda',
+      component: () => import('@/views/AyudaView.vue')
     }
   ],
 })

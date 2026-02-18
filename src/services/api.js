@@ -116,7 +116,19 @@ const proveedor = {
     getEstadisticas: () => extractData(apiClient.get('/proveedor/estadisticas')),
 }
 
+const faqs = {
+    getAll: () => extractData(apiClient.get('/faqs')),
+    create: (data) => extractData(apiClient.post('/faqs', data)),
+    update: (id, data) => extractData(apiClient.put(`/faqs/${id}`, data)),
+    delete: (id) => extractData(apiClient.delete(`/faqs/${id}`)),
+}
 
+const faqCategories = {
+    getAll: () => extractData(apiClient.get('/faq-categories')),
+    create: (data) => extractData(apiClient.post('/faq-categories', data)),
+    update: (id, data) => extractData(apiClient.put(`/faq-categories/${id}`, data)),
+    delete: (id) => extractData(apiClient.delete(`/faq-categories/${id}`)),
+}
 
 export default {
     zonas,
@@ -124,5 +136,8 @@ export default {
     categorias,
     usuarios,
     reservas,
-    proveedor
+    proveedor,
+    faqs,
+    faqCategories
 };
+
