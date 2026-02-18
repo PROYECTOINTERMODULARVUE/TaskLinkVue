@@ -6,6 +6,7 @@ export const useusuarioStore = defineStore('usuario', {
     state: () => ({
         datosUsuario: null,
         cargando: true,
+        mensajes: []
     }),
 
     actions: {
@@ -85,7 +86,22 @@ export const useusuarioStore = defineStore('usuario', {
                 return { success: true };
             } catch (error) {
                 console.error("Error updating profile photo:", error);
-                return { success: false, error };
+                let mensaje = "Error al actualizar la foto de perfil.";
+                if (error.response) {
+                    if (error.response.status === 422) {
+                        mensaje = "La imagen no es válida.";
+                        if (error.response.data.errors) {
+                            console.table(error.response.data.errors);
+                            const firstError = Object.values(error.response.data.errors)[0][0];
+                            mensaje = firstError;
+                        }
+                    } else {
+                        mensaje = `Error del servidor (${error.response.status}).`;
+                    }
+                } else if (error.request) {
+                    mensaje = "Error de red o de CORS. El servidor no respondió o bloqueó la petición.";
+                }
+                return { success: false, message: mensaje };
             } finally {
                 this.cargando = false;
             }

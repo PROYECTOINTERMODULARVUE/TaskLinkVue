@@ -7,7 +7,6 @@ const apiClient = axios.create({
     withCredentials: true, withXSRFToken: true,
     headers: {
         Accept: 'application/json',
-        'Content-Type': 'application/json',
         'X-Requested-With': 'XMLHttpRequest'
 
     }
@@ -19,7 +18,6 @@ const webClient = axios.create({
     withXSRFToken: true,
     headers: {
         Accept: 'application/json',
-        'Content-Type': 'application/json',
         'X-Requested-With': 'XMLHttpRequest'
     }
 });
@@ -67,11 +65,7 @@ const usuarios = {
         await webClient.get('/sanctum/csrf-cookie');
         return extractData(webClient.post('/register', userData));
     },
-    updateProfilePhoto: (formData) => extractData(apiClient.post('/usuario/foto', formData, {
-        headers: {
-            'Content-Type': 'multipart/form-data'
-        }
-    })),
+    updateProfilePhoto: (formData) => extractData(apiClient.post('/usuario/foto', formData)),
     updateProfile: (data) => extractData(apiClient.put('/usuario', data)),
     updatePassword: (data) => extractData(apiClient.put('/usuario/password', data)),
     // Admin methods
@@ -99,11 +93,7 @@ const reservas = {
 
 const proveedor = {
     getServicios: () => extractData(apiClient.get('/proveedor/servicios')),
-    createServicio: (data) => extractData(apiClient.post('/proveedor/servicios', data, {
-        headers: {
-            'Content-Type': 'multipart/form-data'
-        }
-    })),
+    createServicio: (data) => extractData(apiClient.post('/proveedor/servicios', data)),
     updateServicio: (id, data) => extractData(apiClient.post(`/proveedor/servicios/${id}?_method=PUT`, data, { // POST with _method=PUT for FormData compatibility if needed, or simple PUT if JSON
         headers: {
             // 'Content-Type': 'multipart/form-data' // If sending files on update

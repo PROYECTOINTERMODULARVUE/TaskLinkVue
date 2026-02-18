@@ -38,7 +38,10 @@ const triggerFileInput = () => {
 const handleFileChange = async (event) => {
   const file = event.target.files[0]
   if (file) {
-    await usuarioStore.actualizarFotoPerfil(file)
+    const result = await usuarioStore.actualizarFotoPerfil(file)
+    if (!result.success) {
+      alert(result.message || 'Error al actualizar la foto de perfil')
+    }
   }
 }
 </script>
@@ -116,7 +119,9 @@ const handleFileChange = async (event) => {
           </li>
 
           <li v-if="rolStore.isAdmin">
-            <a @click="$router.push('/admin/configuracion-web')"><span>👥</span> Configuración Web</a>
+            <a @click="$router.push('/admin/configuracion-web')"
+              ><span>👥</span> Configuración Web</a
+            >
           </li>
 
           <li v-if="rolStore.canCreateService">
