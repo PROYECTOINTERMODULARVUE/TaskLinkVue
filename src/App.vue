@@ -1,6 +1,7 @@
 <script setup>
 import { useRoute } from 'vue-router'
 import AppMenu from './components/header/AppMenu.vue'
+import ChatWidget from './components/ChatWidget.vue'
 import { useusuarioStore } from './stores/usuario'
 import { onMounted } from 'vue'
 const route = useRoute()
@@ -23,6 +24,7 @@ onMounted(async () => {
   <main>
     <router-view></router-view>
   </main>
+  <ChatWidget />
 </template>
 
 <style scoped>

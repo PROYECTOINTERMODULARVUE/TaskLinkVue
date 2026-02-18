@@ -130,6 +130,12 @@ const faqCategories = {
     delete: (id) => extractData(apiClient.delete(`/faq-categories/${id}`)),
 }
 
+const chatbot = {
+    getCatalogo: () => extractData(apiClient.get('/chatbot/catalogo')),
+    consultarReserva: (email) => extractData(apiClient.post('/chatbot/reserva', { email })),
+    chat: (message) => extractData(apiClient.post('/chatbot/chat', { message })),
+}
+
 export default {
     zonas,
     servicios,
@@ -138,6 +144,7 @@ export default {
     reservas,
     proveedor,
     faqs,
-    faqCategories
+    faqCategories,
+    chatbot
 };
 
