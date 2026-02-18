@@ -40,7 +40,9 @@ export const useusuarioStore = defineStore('usuario', {
             } catch (error) {
                 console.error("Error en el login:", error);
                 let mensaje = "Error desconocido al iniciar sesión.";
-                if (error.response?.status === 422) {
+                if (error.response?.data?.message) {
+                    mensaje = error.response.data.message;
+                } else if (error.response?.status === 422) {
                     mensaje = "Credenciales inválidas.";
                 } else if (error.response?.status === 401) {
                     mensaje = "Correo o contraseña incorrectos.";

@@ -4,15 +4,21 @@ import { ErrorMessage, Field, Form } from 'vee-validate'
 import { useRouter } from 'vue-router'
 import * as yup from 'yup'
 
+import { ref } from 'vue'
+
 const usuarioStore = useusuarioStore()
 const router = useRouter()
+const errorLogin = ref('')
+
 const loguearse = async (values) => {
+  errorLogin.value = ''
   console.log('Formulario enviado con:', values)
   const resultado = await usuarioStore.iniciarSesion(values)
   if (resultado.success) {
     router.push('/')
   } else {
-    console.error('Error de login:', resultado.error)
+    console.error('Error de login:', resultado.message)
+    errorLogin.value = resultado.message
   }
 }
 const schema = yup.object({
@@ -58,6 +64,10 @@ const schema = yup.object({
                 <Field name="password" type="password" placeholder="Ingresa tu contraseña" />
               </div>
               <ErrorMessage name="password" class="error-message" />
+            </div>
+
+            <div v-if="errorLogin" class="general-error">
+              {{ errorLogin }}
             </div>
 
             <button type="submit">Iniciar Sesión</button>
@@ -263,6 +273,18 @@ const schema = yup.object({
     box-shadow 0.3s;
   box-shadow: 0 4px 12px rgba(43, 78, 162, 0.3);
   margin-top: 1rem;
+}
+
+.general-error {
+  background-color: #fff5f5;
+  color: #e53e3e;
+  padding: 0.75rem;
+  border-radius: 8px;
+  border-left: 4px solid #e53e3e;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  text-align: left;
 }
 
 .formulario button[type='submit']:hover {
