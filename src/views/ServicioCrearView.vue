@@ -1,3 +1,145 @@
+<script setup>
+import { ref, onMounted, computed } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import api from '@/services/api'
+
+const router = useRouter()
+const route = useRoute()
+
+const isEditing = computed(() => !!route.query.edit)
+const loading = ref(true)
+const submitting = ref(false)
+const categorias = ref([])
+const zonas = ref([])
+const previewUrl = ref(null)
+const previewExtraUrls = ref([])
+
+const form = ref({
+  Nombre: '',
+  Descripcion: '',
+  Precio: 0,
+  Duracion: 60,
+  idCategoria: '',
+  idZona: '',
+  foto: null,
+  fotos: [],
+})
+
+const fetchCategories = async () => {
+  try {
+    const res = await api.categorias.getAll()
+    categorias.value = res
+  } catch (error) {
+    console.error('Error fetching categories', error)
+  }
+}
+
+const fetchZonas = async () => {
+  try {
+    const res = await api.zonas.getAll()
+    zonas.value = res
+  } catch (error) {
+    console.error('Error fetching zones', error)
+  }
+}
+
+const fetchService = async (id) => {
+  try {
+    const res = await api.servicios.getOne(id)
+    form.value.Nombre = res.Nombre
+    form.value.Descripcion = res.Descripcion
+    form.value.Precio = res.Precio
+    form.value.Duracion = res.Duracion
+    form.value.idCategoria = res.idCategoria || (res.categoria ? res.categoria.IDCategoria : '')
+    form.value.idZona = res.idZona || (res.zona ? res.zona.id : '')
+
+    if (res.ImagenUrl) {
+      previewUrl.value = res.ImagenUrl
+    }
+
+    if (res.fotos && res.fotos.length > 0) {
+      previewExtraUrls.value = res.fotos.filter((f) => !f.EsPrincipal).map((f) => f.Url)
+    }
+  } catch (error) {
+    console.error('Error fetching service', error)
+    alert('No se pudo cargar el servicio')
+    router.push('/perfil')
+  }
+}
+
+const handleFileUpload = (event) => {
+  const file = event.target.files[0]
+  if (file) {
+    form.value.foto = file
+    previewUrl.value = URL.createObjectURL(file)
+  }
+}
+
+const handleExtraFilesUpload = (event) => {
+  const files = Array.from(event.target.files)
+  if (files.length > 15) {
+    alert('Máximo 15 fotos permitidas')
+    event.target.value = '' // Clear input
+    return
+  }
+  form.value.fotos = files
+
+  // Create previews
+  previewExtraUrls.value = files.map((file) => URL.createObjectURL(file))
+}
+
+const submitForm = async () => {
+  submitting.value = true
+  try {
+    const formData = new FormData()
+    formData.append('Nombre', form.value.Nombre)
+    formData.append('Descripcion', form.value.Descripcion)
+    formData.append('Precio', form.value.Precio)
+    formData.append('Duracion', form.value.Duracion)
+    formData.append('idCategoria', form.value.idCategoria)
+    formData.append('idZona', form.value.idZona)
+
+    if (form.value.foto) formData.append('foto', form.value.foto)
+
+    if (form.value.fotos && form.value.fotos.length > 0) {
+      form.value.fotos.forEach((file, index) => {
+        formData.append(`fotos[${index}]`, file)
+      })
+    }
+
+    if (isEditing.value) {
+      // For editing, we might need to handle existing photos vs new ones differently depending on backend
+      // Assuming for now simple update logic
+      // Note: method spoofing for Laravel might be needed if using POST for PUT with files
+      await api.proveedor.updateServicio(route.query.edit, formData)
+      alert('Servicio actualizado correctamente')
+    } else {
+      await api.proveedor.createServicio(formData)
+      alert('Servicio creado correctamente')
+    }
+    router.push('/perfil')
+  } catch (error) {
+    console.error('Error saving service', error)
+    if (error.response && error.response.status === 422) {
+      console.log('Validation Errors:', error.response.data.errors)
+      alert('Error de validación: ' + JSON.stringify(error.response.data.errors))
+    } else {
+      alert('Error al guardar el servicio. Revisa los datos.')
+    }
+  } finally {
+    submitting.value = false
+  }
+}
+
+onMounted(async () => {
+  await Promise.all([fetchCategories(), fetchZonas()])
+  if (isEditing.value) {
+    await fetchService(route.query.edit)
+  }
+  loading.value = false
+})
+</script>
+
 <template>
   <div class="crear-servicio-container">
     <div class="d-flex align-items-center mb-4">
@@ -62,38 +204,36 @@
         </div>
       </div>
 
-      <div class="mb-3">
-        <label for="categoria" class="form-label">Categoría *</label>
-        <select v-model="form.idCategoria" class="form-select" id="categoria" required>
-          <option value="" disabled>Selecciona una categoría</option>
-          <option v-for="cat in categorias" :key="cat.IDCategoria" :value="cat.IDCategoria">
-            {{ cat.Nombre }}
-          </option>
-        </select>
-      </div>
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label for="categoria" class="form-label">Categoría *</label>
+          <select v-model="form.idCategoria" class="form-select" id="categoria" required>
+            <option value="" disabled>Selecciona una categoría</option>
+            <option v-for="cat in categorias" :key="cat.IDCategoria" :value="cat.IDCategoria">
+              {{ cat.Nombre }}
+            </option>
+          </select>
+        </div>
 
-      <div class="mb-3">
-        <label for="direccion" class="form-label">Dirección (Opcional)</label>
-        <input
-          v-model="form.Direccion"
-          type="text"
-          class="form-control"
-          id="direccion"
-          placeholder="Calle, Ciudad..."
-        />
-        <div class="form-text">Si el servicio es a domicilio o en una ubicación específica.</div>
+        <div class="col-md-6 mb-3">
+          <label for="zona" class="form-label">Zona *</label>
+          <select v-model="form.idZona" class="form-select" id="zona" required>
+            <option value="" disabled>Selecciona una zona</option>
+            <option v-for="zona in zonas" :key="zona.id" :value="zona.id">
+              {{ zona.nombre }}
+            </option>
+          </select>
+        </div>
       </div>
-
-      <!-- Hidden lat/lng for now, could be added with a map picker later -->
 
       <div class="mb-4">
-        <label for="foto" class="form-label">Foto del Servicio (Opcional)</label>
+        <label for="foto" class="form-label">Foto Principal (Opcional)</label>
         <input
           @change="handleFileUpload"
           type="file"
           class="form-control"
           id="foto"
-          accept="image/*"
+          accept="image/jpeg, image/png, image/jpg, image/webp"
         />
         <div v-if="previewUrl" class="mt-3">
           <img
@@ -105,6 +245,29 @@
         </div>
       </div>
 
+      <div class="mb-4">
+        <label for="fotos-extra" class="form-label">Más fotos (Máximo 15)</label>
+        <input
+          @change="handleExtraFilesUpload"
+          type="file"
+          class="form-control"
+          id="fotos-extra"
+          accept="image/jpeg, image/png, image/jpg, image/webp"
+          multiple
+        />
+        <div v-if="previewExtraUrls.length" class="mt-3 d-flex flex-wrap gap-2">
+          <img
+            v-for="(url, index) in previewExtraUrls"
+            :key="index"
+            :src="url"
+            alt="Vista previa extra"
+            class="img-thumbnail"
+            style="width: 100px; height: 100px; object-fit: cover"
+          />
+        </div>
+        <div class="form-text">Selecciona hasta 15 fotos para la galería de tu servicio.</div>
+      </div>
+
       <div class="d-flex justify-content-end gap-2">
         <router-link to="/perfil" class="btn btn-secondary">Cancelar</router-link>
         <button type="submit" class="btn btn-primary" :disabled="submitting">
@@ -114,122 +277,6 @@
     </form>
   </div>
 </template>
-
-<script setup>
-import { ref, onMounted, computed } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import api from '@/services/api'
-
-const router = useRouter()
-const route = useRoute()
-
-const isEditing = computed(() => !!route.query.edit)
-const loading = ref(true)
-const submitting = ref(false)
-const categorias = ref([])
-const previewUrl = ref(null)
-
-const form = ref({
-  Nombre: '',
-  Descripcion: '',
-  Precio: 0,
-  Duracion: 60,
-  idCategoria: '',
-  Direccion: '',
-  foto: null,
-})
-
-const fetchCategories = async () => {
-  try {
-    const res = await api.categorias.getAll()
-    categorias.value = res
-  } catch (error) {
-    console.error('Error fetching categories', error)
-  }
-}
-
-const fetchService = async (id) => {
-  try {
-    const res = await api.servicios.getOne(id)
-    form.value.Nombre = res.Nombre
-    form.value.Descripcion = res.Descripcion
-    form.value.Precio = res.Precio
-    form.value.Duracion = res.Duracion
-    form.value.idCategoria = res.idCategoria || (res.categoria ? res.categoria.IDCategoria : '')
-    form.value.Direccion = res.Direccion || '' // Field might not exist in public API, need check
-
-    // If existing photo, showing as preview might be tricky without direct URL,
-    // but normally we can use res.ImagenUrl
-    if (res.ImagenUrl) {
-      previewUrl.value = res.ImagenUrl
-    }
-  } catch (error) {
-    console.error('Error fetching service', error)
-    alert('No se pudo cargar el servicio')
-    router.push('/perfil')
-  }
-}
-
-const handleFileUpload = (event) => {
-  const file = event.target.files[0]
-  if (file) {
-    form.value.foto = file
-    previewUrl.value = URL.createObjectURL(file)
-  }
-}
-
-const submitForm = async () => {
-  submitting.value = true
-  try {
-    if (isEditing.value) {
-      // Update
-      // If checking for file upload, we might need different handling (JSON vs FormData)
-      // api.proveedor.updateServicio expects FormData if utilizing the method I added that sets _method=PUT
-      const formData = new FormData()
-      formData.append('Nombre', form.value.Nombre)
-      formData.append('Descripcion', form.value.Descripcion)
-      formData.append('Precio', form.value.Precio)
-      formData.append('Duracion', form.value.Duracion)
-      formData.append('idCategoria', form.value.idCategoria)
-      if (form.value.Direccion) formData.append('Direccion', form.value.Direccion)
-      if (form.value.foto) formData.append('foto', form.value.foto) // Only append if new file
-
-      // Note: updateServicio in api.js uses POST with _method=PUT to support files
-      // But if we want to update ONLY text fields using PUT JSON, we could.
-      // However, FormData is safer for all-in-one.
-      await api.proveedor.updateServicio(route.query.edit, formData)
-      alert('Servicio actualizado correctamente')
-    } else {
-      // Create
-      const formData = new FormData()
-      formData.append('Nombre', form.value.Nombre)
-      formData.append('Descripcion', form.value.Descripcion)
-      formData.append('Precio', form.value.Precio)
-      formData.append('Duracion', form.value.Duracion)
-      formData.append('idCategoria', form.value.idCategoria)
-      if (form.value.Direccion) formData.append('Direccion', form.value.Direccion)
-      if (form.value.foto) formData.append('foto', form.value.foto)
-
-      await api.proveedor.createServicio(formData)
-      alert('Servicio creado correctamente')
-    }
-    router.push('/perfil')
-  } catch (error) {
-    console.error('Error saving service', error)
-    alert('Error al guardar el servicio. Revisa los datos.')
-  } finally {
-    submitting.value = false
-  }
-}
-
-onMounted(async () => {
-  await fetchCategories()
-  if (isEditing.value) {
-    await fetchService(route.query.edit)
-  }
-  loading.value = false
-})
-</script>
 
 <style scoped>
 .crear-servicio-container {

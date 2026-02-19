@@ -7,6 +7,7 @@ const apiClient = axios.create({
     withCredentials: true, withXSRFToken: true,
     headers: {
         Accept: 'application/json',
+        'Content-Type': 'application/json',
         'X-Requested-With': 'XMLHttpRequest'
 
     }
@@ -18,6 +19,7 @@ const webClient = axios.create({
     withXSRFToken: true,
     headers: {
         Accept: 'application/json',
+        'Content-Type': 'application/json',
         'X-Requested-With': 'XMLHttpRequest'
     }
 });
@@ -65,7 +67,11 @@ const usuarios = {
         await webClient.get('/sanctum/csrf-cookie');
         return extractData(webClient.post('/register', userData));
     },
-    updateProfilePhoto: (formData) => extractData(apiClient.post('/usuario/foto', formData)),
+    updateProfilePhoto: (formData) => extractData(apiClient.post('/usuario/foto', formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data'
+        }
+    })),
     updateProfile: (data) => extractData(apiClient.put('/usuario', data)),
     updatePassword: (data) => extractData(apiClient.put('/usuario/password', data)),
     // Admin methods
@@ -93,10 +99,14 @@ const reservas = {
 
 const proveedor = {
     getServicios: () => extractData(apiClient.get('/proveedor/servicios')),
-    createServicio: (data) => extractData(apiClient.post('/proveedor/servicios', data)),
-    updateServicio: (id, data) => extractData(apiClient.post(`/proveedor/servicios/${id}?_method=PUT`, data, { // POST with _method=PUT for FormData compatibility if needed, or simple PUT if JSON
+    createServicio: (data) => extractData(apiClient.post('/proveedor/servicios', data, {
         headers: {
-            // 'Content-Type': 'multipart/form-data' // If sending files on update
+            'Content-Type': null
+        }
+    })),
+    updateServicio: (id, data) => extractData(apiClient.post(`/proveedor/servicios/${id}?_method=PUT`, data, {
+        headers: {
+            'Content-Type': null
         }
     })),
     // Simple update for non-file data (like toggle active)
@@ -120,12 +130,6 @@ const faqCategories = {
     delete: (id) => extractData(apiClient.delete(`/faq-categories/${id}`)),
 }
 
-const chatbot = {
-    getCatalogo: () => extractData(apiClient.get('/chatbot/catalogo')),
-    consultarReserva: (email) => extractData(apiClient.post('/chatbot/reserva', { email })),
-    chat: (message) => extractData(apiClient.post('/chatbot/chat', { message })),
-}
-
 export default {
     zonas,
     servicios,
@@ -134,7 +138,5 @@ export default {
     reservas,
     proveedor,
     faqs,
-    faqCategories,
-    chatbot
+    faqCategories
 };
-

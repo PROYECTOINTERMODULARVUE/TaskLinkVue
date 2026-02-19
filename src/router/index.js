@@ -62,6 +62,26 @@ const router = createRouter({
       path: '/ayuda',
       name: 'ayuda',
       component: () => import('@/views/AyudaView.vue')
+    },
+    {
+      path: '/favoritos',
+      name: 'favoritos',
+      component: () => import('@/views/FavoritosVue.vue')
+    },
+    {
+      path: '/mensajes',
+      name: 'mensajes',
+      component: () => import('@/views/MensajesView.vue')
+    },
+    {
+      path: '/empleo',
+      name: 'empleo',
+      component: () => import('@/views/EmpleoView.vue')
+    },
+    {
+      path: '/lanzamiento',
+      name: 'lanzamiento',
+      component: () => import('@/views/LanzamientoTaskLinkView.vue')
     }
   ],
 })

@@ -302,6 +302,7 @@ const handleFileChange = async (event) => {
   font-size: 14px;
   border-radius: 8px;
   transition: background 0.2s;
+  cursor:pointer;
 }
 
 .menu-list li a:hover {
