@@ -1,7 +1,13 @@
 <script setup>
-defineProps({
-  urlMapaGoogle: String,
-})
+import { useserviciosStore } from '@/stores/servicio';
+import { computed } from 'vue';
+import { useRoute } from 'vue-router';
+
+const route = useRoute()
+const id =route.params.id;
+const servicioStore = useserviciosStore();
+const urlMapaGoogle = computed(() => servicioStore.servicios.find(s => s.id === id)?.url_mapa_google);
+console.log(urlMapaGoogle.value);
 </script>
 
 <template>

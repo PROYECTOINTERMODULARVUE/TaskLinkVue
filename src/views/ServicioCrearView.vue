@@ -21,6 +21,8 @@ const form = ref({
   Duracion: 60,
   idCategoria: '',
   idZona: '',
+  lat: null,
+  lng: null,
   foto: null,
   fotos: [],
 })
@@ -52,6 +54,8 @@ const fetchService = async (id) => {
     form.value.Duracion = res.Duracion
     form.value.idCategoria = res.idCategoria || (res.categoria ? res.categoria.IDCategoria : '')
     form.value.idZona = res.idZona || (res.zona ? res.zona.id : '')
+    form.value.lat = res.lat
+    form.value.lng = res.lng
 
     if (res.ImagenUrl) {
       previewUrl.value = res.ImagenUrl
@@ -88,6 +92,15 @@ const handleExtraFilesUpload = (event) => {
   previewExtraUrls.value = files.map((file) => URL.createObjectURL(file))
 }
 
+// Sync coordinates when zone changes
+const handleZonaChange = () => {
+  const selectedZona = zonas.value.find((z) => z.id === form.value.idZona)
+  if (selectedZona) {
+    form.value.lat = selectedZona.lat
+    form.value.lng = selectedZona.lng
+  }
+}
+
 const submitForm = async () => {
   submitting.value = true
   try {
@@ -98,6 +111,9 @@ const submitForm = async () => {
     formData.append('Duracion', form.value.Duracion)
     formData.append('idCategoria', form.value.idCategoria)
     formData.append('idZona', form.value.idZona)
+
+    if (form.value.lat) formData.append('lat', form.value.lat)
+    if (form.value.lng) formData.append('lng', form.value.lng)
 
     if (form.value.foto) formData.append('foto', form.value.foto)
 
@@ -217,7 +233,13 @@ onMounted(async () => {
 
         <div class="col-md-6 mb-3">
           <label for="zona" class="form-label">Zona *</label>
-          <select v-model="form.idZona" class="form-select" id="zona" required>
+          <select
+            v-model="form.idZona"
+            @change="handleZonaChange"
+            class="form-select"
+            id="zona"
+            required
+          >
             <option value="" disabled>Selecciona una zona</option>
             <option v-for="zona in zonas" :key="zona.id" :value="zona.id">
               {{ zona.nombre }}
