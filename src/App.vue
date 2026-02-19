@@ -43,4 +43,7 @@ header {
   border-bottom-left-radius: 20px;
   border-bottom-right-radius: 20px;
 }
+body{
+  scroll-behavior: smooth;
+}
 </style>

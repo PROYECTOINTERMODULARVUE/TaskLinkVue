@@ -3,10 +3,12 @@ import { ref, onMounted } from 'vue'
 import { onClickOutside } from '@vueuse/core'
 import { useusuarioStore } from '@/stores/usuario'
 import { useRolStore } from '@/stores/rol' // Import rol store
+import { usereservasStore } from '@/stores/reserva'
 import { useRouter } from 'vue-router'
 
 const usuarioStore = useusuarioStore()
 const rolStore = useRolStore() // Initialize rol store
+const reservaStore = usereservasStore()
 const router = useRouter() // Ensure router is available
 const showDropdown = ref(false)
 const dropdownRef = ref(null)
@@ -18,7 +20,7 @@ onClickOutside(dropdownRef, () => {
 
 onMounted(() => {
   usuarioStore.cargarUsuario()
-  console.log(usuarioStore.datosUsuario)
+  reservaStore.fetchReservasRecibidas()
 })
 
 const toggleDropdown = () => {
@@ -112,7 +114,12 @@ const handleFileChange = async (event) => {
             <a @click="$router.push('/favoritos')"><span>❤️</span> Favoritos</a>
           </li>
           <li>
-            <a @click="$router.push('/mensajes')"><span>💬</span> Mensajes</a>
+            <a @click="$router.push('/mensajes')" class="menu-item-with-badge">
+              <div class="menu-item-content"><span>💬</span> Mensajes</div>
+              <span v-if="reservaStore.pendientesCount > 0" class="pending-badge">
+                {{ reservaStore.pendientesCount }}
+              </span>
+            </a>
           </li>
           <li>
             <a @click="$router.push('/mis-compras')"><span>🧾</span> Mis compras</a>
@@ -302,7 +309,7 @@ const handleFileChange = async (event) => {
   font-size: 14px;
   border-radius: 8px;
   transition: background 0.2s;
-  cursor:pointer;
+  cursor: pointer;
 }
 
 .menu-list li a:hover {
@@ -322,6 +329,31 @@ const handleFileChange = async (event) => {
 .logout-link:hover {
   background-color: #fff5f5 !important;
   color: #c9302c !important;
+}
+
+.menu-item-with-badge {
+  display: flex !important;
+  justify-content: space-between;
+  align-items: center;
+  padding-right: 12px !important;
+}
+
+.menu-item-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pending-badge {
+  background-color: #007bff;
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+  min-width: 18px;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 @media (max-width: 950px) {

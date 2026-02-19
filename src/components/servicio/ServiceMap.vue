@@ -1,19 +1,16 @@
 <script setup>
-import { useserviciosStore } from '@/stores/servicio';
-import { computed } from 'vue';
-import { useRoute } from 'vue-router';
-
-const route = useRoute()
-const id =route.params.id;
-const servicioStore = useserviciosStore();
-const urlMapaGoogle = computed(() => servicioStore.servicios.find(s => s.id === id)?.url_mapa_google);
-console.log(urlMapaGoogle.value);
+const props = defineProps({
+  urlMapaGoogle: {
+    type: String,
+    default: '',
+  },
+})
 </script>
 
 <template>
   <section class="location-section">
     <h3 class="section-title">Ubicación y cobertura</h3>
-    <div v-if="urlMapaGoogle" class="map-container">
+    <div v-if="urlMapaGoogle" class="map-container" id="map">
       <iframe
         :src="urlMapaGoogle"
         width="100%"
@@ -42,7 +39,7 @@ console.log(urlMapaGoogle.value);
 }
 
 .map-container {
-  height: 400px;
+  height: 200px;
   background: #f7f7f7;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
@@ -61,7 +58,7 @@ console.log(urlMapaGoogle.value);
 
 .location-unavailable {
   background: #fffafa;
-  border: 1px dashed #ff385c;
+  border: 1px dashed #007bff;
 }
 
 .map-overlay {
@@ -73,7 +70,7 @@ console.log(urlMapaGoogle.value);
 }
 .map-overlay i {
   font-size: 32px;
-  color: #ff385c;
+  color: #007bff;
 }
 @media (max-width: 992px) {
   .map-container {

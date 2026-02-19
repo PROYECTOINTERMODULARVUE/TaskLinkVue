@@ -71,7 +71,7 @@ const verServicio = (idServicio) => {
 
 const reservarServicio = () => {
   alert(
-    `Iniciando reserva para: ${props.servicio.Nombre}. Te redirigimos a los detalles para completar el proceso.`,
+    router.push(`/reserva-rapida/${props.servicio.IDServicio}`)
   )
 }
 

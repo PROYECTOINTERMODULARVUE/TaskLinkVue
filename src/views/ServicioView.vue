@@ -4,6 +4,7 @@ import { useusuarioStore } from '@/stores/usuario'
 import { onMounted, computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
+import { usereservasStore } from '@/stores/reserva'
 
 // Importar subcomponentes
 import ServiceHeader from '@/components/servicio/ServiceHeader.vue'
@@ -19,6 +20,7 @@ const id = route.params.id
 
 const servicioStore = useserviciosStore()
 const usuarioStore = useusuarioStore()
+const reservaStore = usereservasStore() // Initialized usereservasStore
 const { servicioPasado } = storeToRefs(servicioStore)
 const { datosUsuario } = storeToRefs(usuarioStore)
 const cargandoReserva = ref(false)
@@ -57,6 +59,11 @@ const yaHaComentado = computed(() => {
   return servicioPasado.value.valoraciones.some((v) => v.idUsuario === datosUsuario.value.id)
 })
 
+const esPropietario = computed(() => {
+  if (!datosUsuario.value || !servicioPasado.value) return false
+  return datosUsuario.value.IDUsuario === servicioPasado.value.idProveedor
+})
+
 const fotoPrincipal = computed(() => {
   const fotos = servicioPasado.value?.fotos || []
   const principal = fotos.find((f) => f.EsPrincipal === 1)
@@ -85,18 +92,34 @@ const fotosSecundarias = computed(() => {
   return resultado
 })
 
-const reservarServicio = async () => {
+const reservarServicio = async (payload) => {
   if (!datosUsuario.value) {
     alert('Debes iniciar sesión para reservar este servicio.')
     return
   }
 
   cargandoReserva.value = true
-  // Simulamos una acción de reserva
-  setTimeout(() => {
-    alert(`¡Solicitud de reserva enviada para: ${servicioPasado.value.Nombre}!`)
+  try {
+    const reservaRes = await reservaStore.anyadirReserva({
+      idServicio: id,
+      FechaServicio: payload.fecha,
+      HoraServicio: payload.hora, // Ya viene con formato HH:MM:SS desde el store/api
+    })
+
+    // Redirigir a la página de confirmación con el ID de la reserva
+    router.push({
+      name: 'confirmacion-reserva',
+      params: { id: reservaRes.IDReserva },
+    })
+  } catch (error) {
+    console.error('Error creating reservation:', error)
+    const mensajeError =
+      error.response?.data?.message ||
+      'Hubo un error al procesar tu reserva. Por favor, inténtalo de nuevo.'
+    alert(mensajeError)
+  } finally {
     cargandoReserva.value = false
-  }, 1000)
+  }
 }
 
 const irALogin = () => {
@@ -142,6 +165,8 @@ const irALogin = () => {
       <ServiceBookingWidget
         :precio="servicioPasado.Precio"
         :cargando-reserva="cargandoReserva"
+        :es-propietario="esPropietario"
+        :is-logged-in="!!datosUsuario"
         @reservar="reservarServicio"
       />
     </div>

@@ -22,6 +22,66 @@ const passwordForm = ref({
 const loading = ref(false)
 const savingInfo = ref(false)
 const savingPassword = ref(false)
+const savedCards = ref([])
+const loadingCards = ref(false)
+const addingCard = ref(false)
+const newCard = ref({
+  nombre: '',
+  numero: '',
+  expiracion: '',
+  cvv: '', // Just placeholders for UI
+})
+
+const fetchCards = async () => {
+  loadingCards.value = true
+  try {
+    savedCards.value = await api.tarjetas.getAll()
+  } catch (error) {
+    console.error('Error loading cards', error)
+  } finally {
+    loadingCards.value = false
+  }
+}
+
+const deleteCard = async (id) => {
+  if (!confirm('¿Estás seguro de que quieres eliminar esta tarjeta?')) return
+  try {
+    await api.tarjetas.delete(id)
+    savedCards.value = savedCards.value.filter((c) => c.IDTarjeta !== id)
+  } catch (error) {
+    console.error('Error deleting card', error)
+    alert('Error al eliminar la tarjeta')
+  }
+}
+
+const saveNewCard = async () => {
+  const parts = newCard.value.expiracion.split('/')
+  if (parts.length !== 2) {
+    alert('Formato de fecha de expiración inválido. Debe ser MM/YY.')
+    return
+  }
+
+  addingCard.value = true
+  try {
+    const mes = parts[0].trim().padStart(2, '0')
+    const anio = parts[1].trim().padStart(2, '0')
+
+    const card = await api.tarjetas.create({
+      NombreTitular: newCard.value.nombre,
+      NumeroTarjeta: newCard.value.numero,
+      MesExpiracion: mes,
+      AnioExpiracion: anio,
+    })
+    savedCards.value.push(card)
+    newCard.value = { nombre: '', numero: '', expiracion: '', cvv: '' }
+    alert('Tarjeta guardada correctamente')
+  } catch (error) {
+    console.error('Error saving card', error)
+    alert('Error al guardar la tarjeta')
+  } finally {
+    addingCard.value = false
+  }
+}
 
 const fetchProfile = async () => {
   loading.value = true
@@ -77,6 +137,7 @@ const updatePassword = async () => {
 
 onMounted(() => {
   fetchProfile()
+  fetchCards()
 })
 </script>
 
@@ -163,6 +224,88 @@ onMounted(() => {
           </form>
         </div>
       </div>
+
+      <!-- Saved Cards -->
+      <div class="card">
+        <div class="card-header">
+          <h2>Métodos de Pago</h2>
+          <p>Gestiona tus tarjetas guardadas para realizar reservas de forma más rápida.</p>
+        </div>
+        <div class="card-body">
+          <div v-if="loadingCards" class="text-center py-3">
+            <div class="spinner-border spinner-border-sm text-primary"></div>
+          </div>
+          <div v-else-if="savedCards.length > 0" class="cards-list mb-4">
+            <div v-for="card in savedCards" :key="card.IDTarjeta" class="saved-card-item">
+              <div class="card-info">
+                <i class="bi bi-credit-card"></i>
+                <div>
+                  <p class="card-name">{{ card.NombreTitular }}</p>
+                  <p class="card-number">**** **** **** {{ card.NumeroTarjeta.slice(-4) }}</p>
+                  <p class="card-exp">Expira: {{ card.MesExpiracion }}/{{ card.AnioExpiracion }}</p>
+                </div>
+              </div>
+              <button @click="deleteCard(card.IDTarjeta)" class="btn btn-outline-danger btn-sm">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </div>
+          <div v-else class="alert alert-info py-2">No tienes tarjetas guardadas.</div>
+
+          <hr />
+
+          <h3 class="h6 mb-3">Añadir Nueva Tarjeta</h3>
+          <form @submit.prevent="saveNewCard" class="new-card-form">
+            <div class="mb-3">
+              <label class="form-label">Nombre del Titular</label>
+              <input
+                v-model="newCard.nombre"
+                type="text"
+                class="form-control form-control-sm"
+                required
+              />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Número de Tarjeta</label>
+              <input
+                v-model="newCard.numero"
+                type="text"
+                class="form-control form-control-sm"
+                placeholder="0000 0000 0000 0000"
+                maxlength="19"
+                required
+              />
+            </div>
+            <div class="row mb-3">
+              <div class="col">
+                <label class="form-label">Caducidad (MM/YY)</label>
+                <input
+                  v-model="newCard.expiracion"
+                  type="text"
+                  class="form-control form-control-sm"
+                  placeholder="MM/YY"
+                  maxlength="5"
+                  required
+                />
+              </div>
+              <div class="col">
+                <label class="form-label">CVV</label>
+                <input
+                  v-model="newCard.cvv"
+                  type="password"
+                  class="form-control form-control-sm"
+                  placeholder="***"
+                  maxlength="3"
+                  required
+                />
+              </div>
+            </div>
+            <button type="submit" class="btn btn-success btn-sm w-100" :disabled="addingCard">
+              {{ addingCard ? 'Guardando...' : 'Guardar Tarjeta' }}
+            </button>
+          </form>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -210,5 +353,53 @@ onMounted(() => {
 
 .card-body {
   padding: 20px;
+}
+
+.saved-card-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  background: #fafafa;
+}
+
+.card-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.card-info i {
+  font-size: 1.5rem;
+  color: #007bff;
+}
+
+.card-info p {
+  margin: 0;
+  line-height: 1.2;
+}
+
+.card-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.card-number {
+  color: #666;
+  font-size: 0.85rem;
+}
+
+.card-exp {
+  font-size: 0.75rem;
+  color: #999;
+}
+
+.new-card-form .form-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 4px;
 }
 </style>

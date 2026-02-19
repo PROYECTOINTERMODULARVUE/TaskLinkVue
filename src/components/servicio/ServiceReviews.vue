@@ -229,7 +229,7 @@ const formatearFecha = (fecha) => {
 .cta-icon {
   width: 70px;
   height: 70px;
-  background: #ff385c;
+  background: #007bff;
   color: white;
   border-radius: 18px;
   display: flex;

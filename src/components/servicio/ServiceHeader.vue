@@ -4,6 +4,7 @@ defineProps({
   puntuacion: [Number, String],
   totalReseñas: Number,
   zonaNombre: String,
+  servicioZona: String,
 })
 </script>
 
@@ -19,7 +20,9 @@ defineProps({
       </div>
       <span class="dot">·</span>
       <div class="location-item">
-        <span class="location-text">{{ zonaNombre || 'Ubicación' }}</span>
+        <a href="#mapa" class="location-text">{{
+          zonaNombre || servicioZona || 'Sin Ubicación Disponible'
+        }}</a>
       </div>
     </div>
   </header>
@@ -65,5 +68,6 @@ defineProps({
 .location-text {
   text-decoration: underline;
   cursor: pointer;
+  color: inherit;
 }
 </style>

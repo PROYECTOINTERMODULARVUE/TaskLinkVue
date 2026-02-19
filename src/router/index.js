@@ -82,6 +82,18 @@ const router = createRouter({
       path: '/lanzamiento',
       name: 'lanzamiento',
       component: () => import('@/views/LanzamientoTaskLinkView.vue')
+    },
+    {
+      path: '/confirmacion-reserva/:id',
+      name: 'confirmacion-reserva',
+      component: () => import('@/views/ReservaConfirmacionView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/pago-reserva/:id',
+      name: 'pago-reserva',
+      component: () => import('@/views/PagoReservaView.vue'),
+      meta: { requiresAuth: true }
     }
   ],
 })
@@ -90,11 +102,7 @@ router.beforeEach(async (to, from, next) => {
   const usuarioStore = useusuarioStore()
   const rolStore = useRolStore()
 
-  // Wait for user to be loaded if not already
   if (usuarioStore.cargando) {
-    // Logic to wait or ensure user is loaded could be here,
-    // but for now we assume 'cargarUsuario' is called at app start.
-    // Better: await usuarioStore.cargarUsuario() if we can, but beforeEach is sync/async.
     if (!usuarioStore.datosUsuario) {
       await usuarioStore.cargarUsuario()
     }

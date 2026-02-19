@@ -45,6 +45,7 @@ const servicios = {
     create: (item) => extractData(apiClient.post(`/servicios`, item)),
     modify: (item) => extractData(apiClient.put(`/servicios/${item.id}`, item)),
     serviciosPorCategoria: (idCategoria) => extractData(apiClient.get(`/servicios/categoria/${idCategoria}`,)),
+    getSlots: (id, fecha) => extractData(apiClient.get(`/servicios/${id}/slots`, { params: { fecha } })),
     delete: (id) => extractData(apiClient.delete(`/servicios/${id}`)),
 }
 
@@ -113,6 +114,7 @@ const proveedor = {
     updateServicioJson: (id, data) => extractData(apiClient.put(`/proveedor/servicios/${id}`, data)),
     deleteServicio: (id) => extractData(apiClient.delete(`/proveedor/servicios/${id}`)),
     getReservas: () => extractData(apiClient.get('/proveedor/reservas')),
+    updateReservaEstado: (id, estado) => extractData(apiClient.put(`/proveedor/reservas/${id}/estado`, { Estado: estado })),
     getEstadisticas: () => extractData(apiClient.get('/proveedor/estadisticas')),
 }
 
@@ -121,6 +123,12 @@ const faqs = {
     create: (data) => extractData(apiClient.post('/faqs', data)),
     update: (id, data) => extractData(apiClient.put(`/faqs/${id}`, data)),
     delete: (id) => extractData(apiClient.delete(`/faqs/${id}`)),
+}
+
+const tarjetas = {
+    getAll: () => extractData(apiClient.get('/tarjetas')),
+    create: (data) => extractData(apiClient.post('/tarjetas', data)),
+    delete: (id) => extractData(apiClient.delete(`/tarjetas/${id}`)),
 }
 
 const faqCategories = {
@@ -138,5 +146,6 @@ export default {
     reservas,
     proveedor,
     faqs,
-    faqCategories
+    faqCategories,
+    tarjetas
 };

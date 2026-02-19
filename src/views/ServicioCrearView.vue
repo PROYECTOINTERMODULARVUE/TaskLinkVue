@@ -25,7 +25,48 @@ const form = ref({
   lng: null,
   foto: null,
   fotos: [],
+  disponibilidades: [],
 })
+
+const newSlot = ref({
+  dia_semana: 1,
+  hora_inicio: '09:00',
+  hora_fin: '14:00',
+})
+
+const diasSemana = [
+  { value: 1, label: 'Lunes' },
+  { value: 2, label: 'Martes' },
+  { value: 3, label: 'Miércoles' },
+  { value: 4, label: 'Jueves' },
+  { value: 5, label: 'Viernes' },
+  { value: 6, label: 'Sábado' },
+  { value: 0, label: 'Domingo' },
+]
+
+const addSlot = () => {
+  if (!newSlot.value.hora_inicio || !newSlot.value.hora_fin) return
+
+  form.value.disponibilidades.push({
+    ...newSlot.value,
+    activo: true,
+  })
+
+  // Reset para el siguiente
+  newSlot.value = {
+    dia_semana: 1,
+    hora_inicio: '09:00',
+    hora_fin: '14:00',
+  }
+}
+
+const removeSlot = (index) => {
+  form.value.disponibilidades.splice(index, 1)
+}
+
+const getDiaLabel = (value) => {
+  return diasSemana.find((d) => d.value === value)?.label || 'Desconocido'
+}
 
 const fetchCategories = async () => {
   try {
@@ -61,8 +102,13 @@ const fetchService = async (id) => {
       previewUrl.value = res.ImagenUrl
     }
 
-    if (res.fotos && res.fotos.length > 0) {
-      previewExtraUrls.value = res.fotos.filter((f) => !f.EsPrincipal).map((f) => f.Url)
+    if (res.disponibilidad && res.disponibilidad.length > 0) {
+      form.value.disponibilidades = res.disponibilidad.map((d) => ({
+        dia_semana: d.dia_semana,
+        hora_inicio: d.hora_inicio,
+        hora_fin: d.hora_fin,
+        activo: !!d.activo,
+      }))
     }
   } catch (error) {
     console.error('Error fetching service', error)
@@ -121,6 +167,10 @@ const submitForm = async () => {
       form.value.fotos.forEach((file, index) => {
         formData.append(`fotos[${index}]`, file)
       })
+    }
+
+    if (form.value.disponibilidades && form.value.disponibilidades.length > 0) {
+      formData.append('disponibilidad', JSON.stringify(form.value.disponibilidades))
     }
 
     if (isEditing.value) {
@@ -288,6 +338,59 @@ onMounted(async () => {
           />
         </div>
         <div class="form-text">Selecciona hasta 15 fotos para la galería de tu servicio.</div>
+      </div>
+
+      <div class="availability-section mb-4 p-3 border rounded">
+        <h3 class="h5 mb-3">Disponibilidad Horaria</h3>
+
+        <div class="row g-2 mb-3 align-items-end">
+          <div class="col-md-4">
+            <label class="form-label small">Día</label>
+            <select v-model="newSlot.dia_semana" class="form-select form-select-sm">
+              <option v-for="dia in diasSemana" :key="dia.value" :value="dia.value">
+                {{ dia.label }}
+              </option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label small">Inicio</label>
+            <input v-model="newSlot.hora_inicio" type="time" class="form-control form-control-sm" />
+          </div>
+          <div class="col-md-3">
+            <label class="form-label small">Fin</label>
+            <input v-model="newSlot.hora_fin" type="time" class="form-control form-control-sm" />
+          </div>
+          <div class="col-md-2">
+            <button type="button" @click="addSlot" class="btn btn-sm btn-outline-primary w-100">
+              <i class="bi bi-plus-lg"></i> Añadir
+            </button>
+          </div>
+        </div>
+
+        <div v-if="form.disponibilidades.length" class="slots-list mt-3">
+          <div
+            v-for="(slot, index) in form.disponibilidades"
+            :key="index"
+            class="slot-item d-flex justify-content-between align-items-center p-2 mb-2 bg-light rounded border"
+          >
+            <div>
+              <span class="fw-bold me-2">{{ getDiaLabel(slot.dia_semana) }}:</span>
+              <span
+                >{{ slot.hora_inicio.substring(0, 5) }} - {{ slot.hora_fin.substring(0, 5) }}</span
+              >
+            </div>
+            <button
+              type="button"
+              @click="removeSlot(index)"
+              class="btn btn-sm btn-link text-danger p-0"
+            >
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        </div>
+        <div v-else class="text-muted small italic">
+          No has añadido franjas de disponibilidad. Los usuarios no podrán reservar.
+        </div>
       </div>
 
       <div class="d-flex justify-content-end gap-2">

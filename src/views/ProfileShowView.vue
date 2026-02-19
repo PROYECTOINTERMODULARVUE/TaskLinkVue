@@ -11,7 +11,8 @@ const rolStore = useRolStore()
 
 const user = ref(null)
 const loading = ref(true)
-const activeTab = ref('stats') // stats, servicios, reservas
+const activeTab = ref('stats') // stats, servicios, reservas, tarjetas
+const tarjetasGuardadas = ref([])
 
 const stats = computed(() => {
   if (!user.value) return { servicios: 0, reservas: 0 }
@@ -24,8 +25,12 @@ const stats = computed(() => {
 const fetchProfile = async () => {
   loading.value = true
   try {
-    const res = await api.usuarios.getUsuarioActual()
-    user.value = res
+    const [resUsuario, resTarjetas] = await Promise.all([
+      api.usuarios.getUsuarioActual(),
+      api.tarjetas.getAll(),
+    ])
+    user.value = resUsuario
+    tarjetasGuardadas.value = resTarjetas
   } catch (error) {
     console.error('Error loading profile', error)
   } finally {
@@ -136,11 +141,17 @@ onMounted(() => {
         >
           Mis Reservas
         </button>
+        <button
+          class="tab-button"
+          :class="{ active: activeTab === 'tarjetas' }"
+          @click="activeTab = 'tarjetas'"
+        >
+          Mis Tarjetas
+        </button>
       </div>
 
       <!-- Tab Content -->
       <div class="tab-content mt-6">
-        <!-- Stats Tab -->
         <div v-if="activeTab === 'stats'" class="tab-pane active">
           <div class="stats-grid">
             <div class="stat-item cursor-pointer" @click="activeTab = 'servicios'">
@@ -150,6 +161,39 @@ onMounted(() => {
             <div class="stat-item cursor-pointer" @click="activeTab = 'reservas'">
               <h3 class="stat-title">Reservas</h3>
               <p class="stat-value">{{ stats.reservas }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tarjetas Tab -->
+        <div v-if="activeTab === 'tarjetas'" class="tab-pane active">
+          <h3 class="section-subtitle">Mis Tarjetas Guardadas</h3>
+          <div class="tarjetas-list mt-4">
+            <div v-if="tarjetasGuardadas.length === 0" class="alert alert-info">
+              No tienes ninguna tarjeta guardada.
+            </div>
+            <div v-else class="cards-grid">
+              <div
+                v-for="tarjeta in tarjetasGuardadas"
+                :key="tarjeta.IDTarjeta"
+                class="card-item-simple"
+              >
+                <div class="card-icon">
+                  <i class="bi bi-credit-card-2-front"></i>
+                </div>
+                <div class="card-details">
+                  <p class="card-owner">{{ tarjeta.NombreTitular }}</p>
+                  <p class="card-num">**** **** **** {{ tarjeta.NumeroTarjeta.slice(-4) }}</p>
+                  <p class="card-expiration">
+                    Expira: {{ tarjeta.MesExpiracion }}/{{ tarjeta.AnioExpiracion }}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div class="mt-4">
+              <router-link to="/perfil/editar" class="btn btn-sm btn-outline-primary">
+                Gestionar tarjetas en edición
+              </router-link>
             </div>
           </div>
         </div>
@@ -348,10 +392,49 @@ onMounted(() => {
 }
 
 .service-item,
-.reservation-item {
+.reservation-item,
+.card-item-simple {
   border: 1px solid #eee;
   padding: 15px;
   border-radius: 8px;
   margin-bottom: 15px;
+}
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.card-item-simple {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: #fcfcfc;
+}
+
+.card-icon i {
+  font-size: 2rem;
+  color: #0d6efd;
+}
+
+.card-details p {
+  margin: 0;
+  line-height: 1.4;
+}
+
+.card-owner {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.card-num {
+  color: #555;
+  font-family: monospace;
+}
+
+.card-expiration {
+  font-size: 0.8rem;
+  color: #888;
 }
 </style>

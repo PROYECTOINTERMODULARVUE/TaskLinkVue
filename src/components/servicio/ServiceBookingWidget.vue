@@ -1,10 +1,65 @@
 <script setup>
-defineProps({
+import { ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import api from '@/services/api'
+
+const props = defineProps({
   precio: [Number, String],
   cargandoReserva: Boolean,
+  esPropietario: Boolean,
+  isLoggedIn: Boolean,
 })
 
 const emit = defineEmits(['reservar'])
+const route = useRoute()
+const router = useRouter();
+const idServicio = route.params.id
+
+
+const fechaSeleccionada = ref('')
+const horaSeleccionada = ref('')
+const slotsDisponibles = ref([])
+const cargandoSlots = ref(false)
+
+const today = new Date().toISOString().split('T')[0]
+
+watch(fechaSeleccionada, async (nuevaFecha) => {
+  if (nuevaFecha && !props.esPropietario) {
+    cargandoSlots.value = true
+    horaSeleccionada.value = ''
+    try {
+      slotsDisponibles.value = await api.servicios.getSlots(idServicio, nuevaFecha)
+    } catch (error) {
+      console.error('Error fetching slots:', error)
+      slotsDisponibles.value = []
+    } finally {
+      cargandoSlots.value = false
+    }
+  } else {
+    slotsDisponibles.value = []
+    horaSeleccionada.value = ''
+  }
+})
+
+const handleReservar = () => {
+  if (!props.isLoggedIn) {
+    alert('Debes iniciar sesión para reservar.')
+    return
+  }
+  if (!fechaSeleccionada.value || !horaSeleccionada.value) {
+    alert('Por favor, selecciona una fecha y una hora.')
+    return
+  }
+
+  router.push({
+    name: 'pago-reserva',
+    params: { id: idServicio },
+    query: {
+      fecha: fechaSeleccionada.value,
+      hora: horaSeleccionada.value,
+    },
+  })
+}
 </script>
 
 <template>
@@ -16,22 +71,62 @@ const emit = defineEmits(['reservar'])
           <span class="price">{{ precio }}€</span>
           <span class="per-session">/ sesión</span>
           <!-- Fecha visible en móvil debajo del precio -->
-          <div class="mobile-date">Seleccionar fecha</div>
+          <div class="mobile-date">
+            {{ fechaSeleccionada || 'Seleccionar fecha' }}
+            <span v-if="horaSeleccionada"> - {{ horaSeleccionada }}</span>
+          </div>
         </div>
 
-        <div class="booking-actions-wrapper">
-          <button @click="emit('reservar')" class="btn-reservar" :disabled="cargandoReserva">
-            {{ cargandoReserva ? '...' : 'Reservar' }}
+        <div class="booking-actions-wrapper" v-if="!esPropietario">
+          <div v-if="esPropietario" class="error">
+            <span> Eres el propietario de este servicio.</span>
+          </div>
+          <button
+            @click="handleReservar"
+            class="btn-reservar"
+            :disabled="cargandoReserva || !fechaSeleccionada || !horaSeleccionada"
+          >
+            {{ cargandoReserva ? '...' : isLoggedIn ? 'Reservar' : 'Inicia sesión para reservar' }}
           </button>
         </div>
       </div>
 
-      <!-- Selectores detallados (ocultos en la barra fija de móvil, se podrían abrir en modal) -->
-      <div class="desktop-selectors">
+      <!-- Propietario Info -->
+      <div v-if="esPropietario" class="owner-notice">
+        <p>✨ Eres el propietario de este servicio.</p>
+        <p class="notice-desc">
+          Puedes gestionar las reservas recibidas desde tu panel de mensajes.
+        </p>
+        <button @click="$router.push('/mensajes')" class="btn-manage">Ir a mis mensajes</button>
+      </div>
+
+      <!-- Selectores detallados (ocultos si es propietario o si se muestra el pago) -->
+      <div v-else-if="!mostrarPago" class="desktop-selectors">
         <div class="booking-selectors">
-          <div class="selector-item">
+          <div class="selector-item date-selector">
             <div class="selector-label">FECHA</div>
-            <div class="selector-value">Seleccionar fecha</div>
+            <input type="date" v-model="fechaSeleccionada" :min="today" class="selector-input" />
+          </div>
+          <div class="selector-item time-selector" :class="{ disabled: !fechaSeleccionada }">
+            <div class="selector-label">HORA</div>
+            <select
+              v-model="horaSeleccionada"
+              class="selector-input"
+              :disabled="!fechaSeleccionada || cargandoSlots"
+            >
+              <option value="" disabled>
+                {{ cargandoSlots ? 'Cargando...' : 'Seleccionar hora' }}
+              </option>
+              <option v-for="slot in slotsDisponibles" :key="slot.inicio" :value="slot.inicio">
+                {{ slot.inicio.substring(0, 5) }}
+              </option>
+              <option
+                v-if="!cargandoSlots && fechaSeleccionada && slotsDisponibles.length === 0"
+                disabled
+              >
+                No hay horas disponibles
+              </option>
+            </select>
           </div>
         </div>
 
@@ -40,6 +135,72 @@ const emit = defineEmits(['reservar'])
         <div class="total-row">
           <span>Total</span>
           <span class="total-price">{{ precio }}€</span>
+        </div>
+      </div>
+
+      <!-- Formulario de Pago -->
+      <div v-else class="payment-form animate__animated animate__fadeIn">
+        <div class="payment-header">
+          <button @click="cancelarPago" class="btn-back">
+            <i class="bi bi-chevron-left"></i> Volver
+          </button>
+          <h4>Datos de Pago</h4>
+        </div>
+
+        <div class="card-inputs">
+          <div class="input-group">
+            <label>TITULAR DE LA TARJETA</label>
+            <input
+              type="text"
+              v-model="datosTarjeta.nombre"
+              placeholder="Nombre como aparece en la tarjeta"
+            />
+          </div>
+          <div class="input-group">
+            <label>NÚMERO DE TARJETA</label>
+            <div class="card-number-wrapper">
+              <i class="bi bi-credit-card"></i>
+              <input
+                type="text"
+                v-model="datosTarjeta.numero"
+                placeholder="0000 0000 0000 0000"
+                maxlength="19"
+              />
+            </div>
+          </div>
+          <div class="row g-2">
+            <div class="col-7">
+              <div class="input-group">
+                <label>CADUCIDAD</label>
+                <input
+                  type="text"
+                  v-model="datosTarjeta.expiracion"
+                  placeholder="MM/YY"
+                  maxlength="5"
+                />
+              </div>
+            </div>
+            <div class="col-5">
+              <div class="input-group">
+                <label>CVV</label>
+                <input type="password" v-model="datosTarjeta.cvv" placeholder="123" maxlength="4" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="payment-footer">
+          <div class="total-row mini">
+            <span>Total a pagar</span>
+            <span>{{ precio }}€</span>
+          </div>
+          <button
+            @click="confirmarPagoYReservar"
+            class="btn-confirm-payment"
+            :disabled="cargandoReserva"
+          >
+            {{ cargandoReserva ? 'Procesando...' : 'Confirmar y Pagar' }}
+          </button>
         </div>
       </div>
     </div>
@@ -96,7 +257,7 @@ const emit = defineEmits(['reservar'])
 }
 
 .btn-reservar {
-  background-color: #ff385c;
+  background-color: #007bff;
   color: white;
   border: none;
   border-radius: 8px;
@@ -106,6 +267,10 @@ const emit = defineEmits(['reservar'])
   cursor: pointer;
   width: 100%;
   transition: transform 0.1s ease;
+}
+
+.error {
+  color: red;
 }
 
 .btn-reservar:active {
@@ -132,6 +297,69 @@ const emit = defineEmits(['reservar'])
   border-top: 1px solid #dddddd;
   font-size: 18px;
   font-weight: 600;
+}
+
+.selector-input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  color: #222;
+  padding: 0;
+  outline: none;
+  cursor: pointer;
+}
+
+.selector-input:disabled {
+  cursor: not-allowed;
+  color: #b0b0b0;
+}
+
+.date-selector {
+  border-bottom: 1px solid #b0b0b0;
+}
+
+.time-selector.disabled {
+  background-color: #f7f7f7;
+  opacity: 0.6;
+}
+
+.owner-notice {
+  text-align: center;
+  padding: 24px 16px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  border: 1px solid #e9ecef;
+}
+
+.owner-notice p {
+  margin: 0;
+  font-weight: 600;
+  color: #333;
+}
+
+.notice-desc {
+  font-size: 14px;
+  color: #666;
+  margin-top: 8px !important;
+  font-weight: 400 !important;
+}
+
+.btn-manage {
+  margin-top: 20px;
+  background: #222;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  transition: background 0.2s;
+}
+
+.btn-manage:hover {
+  background: #000;
 }
 
 /* Versión Móvil Fija */
