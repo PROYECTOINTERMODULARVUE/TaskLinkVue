@@ -147,5 +147,8 @@ export default {
     proveedor,
     faqs,
     faqCategories,
-    tarjetas
+    tarjetas,
+    n8n: {
+        confirmarCompra: (data) => axios.post(`${import.meta.env.VITE_N8N_URL}/webhook/de8655a7-0ebb-49cb-aca5-2302a73b65ac`, data)
+    }
 };

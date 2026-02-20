@@ -11,6 +11,8 @@ const props = defineProps({
   },
 })
 
+const emit = defineEmits(['reservar-rapido'])
+
 const zonasStore = usezonasStore()
 const direccion = ref('Cargando ubicación...')
 const router = useRouter()
@@ -70,9 +72,7 @@ const verServicio = (idServicio) => {
 }
 
 const reservarServicio = () => {
-  alert(
-    router.push(`/reserva-rapida/${props.servicio.IDServicio}`)
-  )
+  emit('reservar-rapido', props.servicio)
 }
 
 onMounted(() => {

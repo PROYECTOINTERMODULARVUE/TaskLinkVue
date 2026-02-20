@@ -3,10 +3,12 @@ import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '@/services/api'
 import { usereservasStore } from '@/stores/reserva'
+import { useusuarioStore } from '@/stores/usuario'
 
 const route = useRoute()
 const router = useRouter()
 const reservaStore = usereservasStore()
+const usuarioStore = useusuarioStore()
 
 const idServicio = route.params.id
 const fecha = route.query.fecha
@@ -100,6 +102,21 @@ const confirmarYReservar = async () => {
       HoraServicio: horaFormateada,
       Estado: 'Pendiente',
     })
+
+    // 3. Notificar a n8n para envío de factura
+    try {
+      await api.n8n.confirmarCompra({
+        status: 'paid',
+        email: usuarioStore.datosUsuario?.email,
+        cliente_nombre: usuarioStore.datosUsuario?.name || usuarioStore.datosUsuario?.Nombre,
+        servicio_nombre: servicio.value.Nombre,
+        precio: servicio.value.Precio,
+        fecha: fecha,
+      })
+    } catch (n8nError) {
+      console.warn('Error al notificar a n8n:', n8nError)
+      // No bloqueamos al usuario si n8n falla, la reserva ya está hecha
+    }
 
     router.push(`/confirmacion-reserva/${nuevaReserva.IDReserva}`)
   } catch (error) {

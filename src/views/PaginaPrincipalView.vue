@@ -1,12 +1,19 @@
 <script setup>
 import CategoriasComponent from '@/components/CategoriasComponent.vue'
 import ServicioCard from '@/components/ServicioCard.vue'
+import QuickBookingModal from '@/components/QuickBookingModal.vue'
 import { usecategoriasStore } from '@/stores/categoria'
 import { useserviciosStore } from '@/stores/servicio'
 import { onMounted, ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 
 const categoriaStore = usecategoriasStore()
 const serviciosStore = useserviciosStore()
+const router = useRouter()
+
+// Modal state
+const showQuickBooking = ref(false)
+const selectedService = ref(null)
 
 // Refs for scroll containers
 const catListRef = ref(null)
@@ -55,6 +62,16 @@ const scrollCarousel = (refName, direction) => {
     })
   }
 }
+
+const openQuickBooking = (servicio) => {
+  selectedService.value = servicio
+  showQuickBooking.value = true
+}
+
+const handleBookingSuccess = (idReserva) => {
+  showQuickBooking.value = false
+  router.push(`/confirmacion-reserva/${idReserva}`)
+}
 </script>
 
 <template>
@@ -88,6 +105,7 @@ const scrollCarousel = (refName, direction) => {
           v-for="servicio in serviciosStore.servicios"
           :key="servicio.id"
           :servicio="servicio"
+          @reservar-rapido="openQuickBooking"
         />
       </div>
       <button class="nav-btn right" @click="scrollCarousel('serv', 'right')">
@@ -111,6 +129,7 @@ const scrollCarousel = (refName, direction) => {
             v-for="servicio in grupo.servicios"
             :key="servicio.id"
             :servicio="servicio"
+            @reservar-rapido="openQuickBooking"
           />
         </div>
         <button class="nav-btn right" @click="scrollCarousel(grupo.nombre, 'right')">
@@ -119,6 +138,14 @@ const scrollCarousel = (refName, direction) => {
       </div>
     </div>
   </div>
+
+  <QuickBookingModal 
+    v-if="selectedService"
+    :show="showQuickBooking"
+    :servicio="selectedService"
+    @close="showQuickBooking = false"
+    @success="handleBookingSuccess"
+  />
 </template>
 
 <style scoped>

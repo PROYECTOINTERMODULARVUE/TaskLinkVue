@@ -66,7 +66,7 @@ const handleReservar = () => {
   <aside class="sidebar-column">
     <div class="booking-widget">
       <!-- Container para disposición flexible en móvil -->
-      <div class="mobile-flex-container">
+      <div class="widget-header">
         <div class="widget-price">
           <span class="price">{{ precio }}€</span>
           <span class="per-session">/ sesión</span>
@@ -75,19 +75,6 @@ const handleReservar = () => {
             {{ fechaSeleccionada || 'Seleccionar fecha' }}
             <span v-if="horaSeleccionada"> - {{ horaSeleccionada }}</span>
           </div>
-        </div>
-
-        <div class="booking-actions-wrapper" v-if="!esPropietario">
-          <div v-if="esPropietario" class="error">
-            <span> Eres el propietario de este servicio.</span>
-          </div>
-          <button
-            @click="handleReservar"
-            class="btn-reservar"
-            :disabled="cargandoReserva || !fechaSeleccionada || !horaSeleccionada"
-          >
-            {{ cargandoReserva ? '...' : isLoggedIn ? 'Reservar' : 'Inicia sesión para reservar' }}
-          </button>
         </div>
       </div>
 
@@ -101,42 +88,56 @@ const handleReservar = () => {
       </div>
 
       <!-- Selectores detallados (ocultos si es propietario o si se muestra el pago) -->
-      <div v-else-if="!mostrarPago" class="desktop-selectors">
-        <div class="booking-selectors">
-          <div class="selector-item date-selector">
-            <div class="selector-label">FECHA</div>
-            <input type="date" v-model="fechaSeleccionada" :min="today" class="selector-input" />
-          </div>
-          <div class="selector-item time-selector" :class="{ disabled: !fechaSeleccionada }">
-            <div class="selector-label">HORA</div>
-            <select
-              v-model="horaSeleccionada"
-              class="selector-input"
-              :disabled="!fechaSeleccionada || cargandoSlots"
-            >
-              <option value="" disabled>
-                {{ cargandoSlots ? 'Cargando...' : 'Seleccionar hora' }}
-              </option>
-              <option v-for="slot in slotsDisponibles" :key="slot.inicio" :value="slot.inicio">
-                {{ slot.inicio.substring(0, 5) }}
-              </option>
-              <option
-                v-if="!cargandoSlots && fechaSeleccionada && slotsDisponibles.length === 0"
-                disabled
+      <template v-else-if="!mostrarPago">
+        <div class="desktop-selectors">
+          <div class="booking-selectors">
+            <div class="selector-item date-selector">
+              <div class="selector-label">FECHA</div>
+              <input type="date" v-model="fechaSeleccionada" :min="today" class="selector-input" />
+            </div>
+            <div class="selector-item time-selector" :class="{ disabled: !fechaSeleccionada }">
+              <div class="selector-label">HORA</div>
+              <select
+                v-model="horaSeleccionada"
+                class="selector-input"
+                :disabled="!fechaSeleccionada || cargandoSlots"
               >
-                No hay horas disponibles
-              </option>
-            </select>
+                <option value="" disabled>
+                  {{ cargandoSlots ? 'Cargando...' : 'Seleccionar hora' }}
+                </option>
+                <option v-for="slot in slotsDisponibles" :key="slot.inicio" :value="slot.inicio">
+                  {{ slot.inicio.substring(0, 5) }}
+                </option>
+                <option
+                  v-if="!cargandoSlots && fechaSeleccionada && slotsDisponibles.length === 0"
+                  disabled
+                >
+                  No hay horas disponibles
+                </option>
+              </select>
+            </div>
           </div>
         </div>
 
-        <p class="no-charge-info">No se te cobrará nada aún</p>
-
-        <div class="total-row">
-          <span>Total</span>
-          <span class="total-price">{{ precio }}€</span>
+        <!-- Botón de reserva (Fuera de desktop-selectors para que se vea en móvil) -->
+        <div class="booking-actions-wrapper">
+          <button
+            @click="handleReservar"
+            class="btn-reservar"
+            :disabled="cargandoReserva || !fechaSeleccionada || !horaSeleccionada"
+          >
+            {{ cargandoReserva ? '...' : isLoggedIn ? 'Reservar' : 'Inicia sesión para reservar' }}
+          </button>
         </div>
-      </div>
+
+        <div class="price-summary-desktop">
+          <p class="no-charge-info">No se te cobrará nada aún</p>
+          <div class="total-row">
+            <span>Total</span>
+            <span class="total-price">{{ precio }}€</span>
+          </div>
+        </div>
+      </template>
 
       <!-- Formulario de Pago -->
       <div v-else class="payment-form animate__animated animate__fadeIn">
@@ -382,13 +383,14 @@ const handleReservar = () => {
     border-radius: 0;
     padding: 16px 24px;
     box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
-  }
-
-  .mobile-flex-container {
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 16px;
+  }
+
+  .widget-header {
+    flex: 1;
   }
 
   .widget-price {
@@ -410,10 +412,13 @@ const handleReservar = () => {
   .booking-actions-wrapper {
     flex: 0 0 auto;
     min-width: 140px;
+    margin-top: 0;
   }
 
-  .desktop-selectors {
-    display: none;
+  .desktop-selectors, 
+  .no-charge-info, 
+  .total-row {
+    display: none !important;
   }
 
   .btn-reservar {
