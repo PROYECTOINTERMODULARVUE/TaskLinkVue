@@ -1,6 +1,9 @@
 <script setup>
+import { useRoute } from 'vue-router'
 import AjustesInicioSesionComponent from './AjustesInicioSesionComponent.vue'
 import BuscadorComponent from './BuscadorComponent.vue'
+
+const route = useRoute()
 </script>
 
 <template>
@@ -15,7 +18,7 @@ import BuscadorComponent from './BuscadorComponent.vue'
     <!-- Logo para móvil (icono) -->
     <img :src="'/icono.png'" alt="Logo" class="logo logo-mobile" @click="$router.push('/')" />
   </div>
-  <div class="searchBar">
+  <div class="searchBar" v-if="route.path === '/'">
     <BuscadorComponent />
   </div>
   <div>

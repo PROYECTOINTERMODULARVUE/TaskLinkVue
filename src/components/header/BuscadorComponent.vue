@@ -1,9 +1,12 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { format, parseISO } from 'date-fns'
 import FechaSelector from './FechaSelector.vue'
 import ServicioSelector from './ServicioSelector.vue'
 import ZonaSelector from './ZonaSelector.vue'
+import { useSearchStore } from '@/stores/search'
 
+const searchStore = useSearchStore()
 const mostrarBuscadorMovil = ref(false)
 const pasoActivo = ref('zona') // Controla qué sección está abierta en móvil
 
@@ -16,10 +19,30 @@ const cerrarBuscadorMovil = () => {
   mostrarBuscadorMovil.value = false
 }
 
+const triggerSearch = () => {
+  searchStore.triggerSearch()
+  cerrarBuscadorMovil()
+}
+
 const resetFiltros = () => {
-  // Aquí podrías añadir la lógica para limpiar los stores si lo necesitas
+  searchStore.resetFiltros()
   pasoActivo.value = 'zona'
 }
+
+const textoFechaResumen = computed(() => {
+  const { inicio, fin } = searchStore.pending.fechas
+  if (inicio) {
+    try {
+      if (fin && fin !== inicio) {
+        return `${format(parseISO(inicio), 'dd MMM')} - ${format(parseISO(fin), 'dd MMM')}`
+      }
+      return format(parseISO(inicio), 'dd MMM')
+    } catch (e) {
+      return 'Fecha seleccionada'
+    }
+  }
+  return 'Añade fechas'
+})
 </script>
 
 <template>
@@ -45,7 +68,7 @@ const resetFiltros = () => {
         <ServicioSelector class="selector-input" />
       </div>
 
-      <button class="buscarBtn">
+      <button class="buscarBtn" @click="triggerSearch">
         <i class="bi bi-search"></i>
       </button>
     </div>
@@ -70,7 +93,7 @@ const resetFiltros = () => {
         >
           <div v-if="pasoActivo !== 'zona'" class="resumen">
             <span class="label">¿Dónde?</span>
-            <span class="valor">Búsqueda flexible</span>
+            <span class="valor">{{ searchStore.pending.zona?.nombre || 'Búsqueda flexible' }}</span>
           </div>
           <div v-else class="detalle">
             <h2>¿Dónde?</h2>
@@ -85,7 +108,7 @@ const resetFiltros = () => {
         >
           <div v-if="pasoActivo !== 'fecha'" class="resumen">
             <span class="label">Fechas</span>
-            <span class="valor">Añade fechas</span>
+            <span class="valor">{{ textoFechaResumen }}</span>
           </div>
           <div v-else class="detalle">
             <h2>¿Cuándo?</h2>
@@ -100,7 +123,7 @@ const resetFiltros = () => {
         >
           <div v-if="pasoActivo !== 'servicio'" class="resumen">
             <span class="label">Tipo de servicio</span>
-            <span class="valor">Añade un servicio</span>
+            <span class="valor">{{ searchStore.pending.servicio?.Nombre || 'Cualquiera' }}</span>
           </div>
           <div v-else class="detalle">
             <h2>¿Qué necesitas?</h2>
@@ -111,7 +134,7 @@ const resetFiltros = () => {
 
       <div class="footerMovil">
         <button class="btnLink" @click="resetFiltros">Restablecer</button>
-        <button class="btnBuscarMovil"><i class="bi bi-search"></i> Buscar</button>
+        <button class="btnBuscarMovil" @click="triggerSearch"><i class="bi bi-search"></i> Buscar</button>
       </div>
     </div>
   </div>

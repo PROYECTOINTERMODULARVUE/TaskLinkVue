@@ -1,15 +1,25 @@
 <script setup>
 import { usezonasStore } from '@/stores/zona'
-import { computed, onMounted, ref } from 'vue'
+import { useSearchStore } from '@/stores/search'
+import { computed, onMounted, ref, watch } from 'vue'
 
 const zonasStore = usezonasStore()
-const textoZona = ref('Buscar destinos')
+const searchStore = useSearchStore()
+const textoZona = ref(searchStore.pending.zona ? searchStore.pending.zona.nombre : 'Buscar destinos')
 const verZonas = ref(false)
 const filtroZona = ref('')
 
 onMounted(async () => {
   await zonasStore.todasLasZonas()
 })
+
+// Sync text if store changes (e.g. reset)
+watch(
+  () => searchStore.pending.zona,
+  (newZona) => {
+    textoZona.value = newZona ? newZona.nombre : 'Buscar destinos'
+  },
+)
 
 const mostrarZonas = () => {
   verZonas.value = !verZonas.value
@@ -21,8 +31,16 @@ const mostrarZonas = () => {
 
 const seleccionarZona = (zona) => {
   textoZona.value = zona.nombre
+  searchStore.setZona(zona)
   verZonas.value = false
   filtroZona.value = ''
+}
+
+const limpiarZona = (e) => {
+  e.stopPropagation()
+  searchStore.setZona(null)
+  searchStore.triggerSearch() // Update results immediately
+  verZonas.value = false
 }
 
 const zonasFiltradas = computed(() => {
@@ -41,7 +59,10 @@ const zonasFiltradas = computed(() => {
   <div class="zonaSelectorWrapper" tabindex="0" @blur="verZonas = false">
     <!-- Trigger Text -->
     <div class="selector-trigger" @click="mostrarZonas">
-      {{ textoZona }}
+      <div class="display-content">
+        <span :class="{ 'has-value': searchStore.pending.zona }">{{ textoZona }}</span>
+        <button v-if="searchStore.pending.zona" class="clear-btn" @click.stop="limpiarZona">✕</button>
+      </div>
     </div>
 
     <!-- Dropdown -->
@@ -88,13 +109,53 @@ const zonasFiltradas = computed(() => {
 
 .selector-trigger {
   margin: 0;
+  cursor: pointer;
+  padding: 0; /* Remove padding to fill container */
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.display-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+}
+
+.display-content span {
   font-size: 14px;
   color: #717171;
-  cursor: pointer;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  padding: 8px 0; /* Add some touch target */
+}
+
+.display-content span.has-value {
+  color: #222;
+  font-weight: 600;
+}
+
+.clear-btn {
+  background: #f7f7f7;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: #717171;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.clear-btn:hover {
+  background: #ebebeb;
+  color: #222;
 }
 
 /* Dropdown */

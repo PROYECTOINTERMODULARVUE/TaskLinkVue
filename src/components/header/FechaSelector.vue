@@ -1,28 +1,104 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { VueDatePicker } from '@vuepic/vue-datepicker'
 import '@vuepic/vue-datepicker/dist/main.css'
 import { es } from 'date-fns/locale'
-import { addDays, nextFriday, nextSunday, startOfToday } from 'date-fns'
+import { addDays, nextFriday, nextSunday, startOfToday, format } from 'date-fns'
+import { useSearchStore } from '@/stores/search'
 
-const date = ref(null)
+const searchStore = useSearchStore()
+const root = ref(null)
+
+const range = ref(
+  searchStore.pending.fechas.inicio
+    ? [
+        new Date(searchStore.pending.fechas.inicio),
+        searchStore.pending.fechas.fin
+          ? new Date(searchStore.pending.fechas.fin)
+          : new Date(searchStore.pending.fechas.inicio),
+      ]
+    : null,
+)
 const open = ref(false)
 
+const textoFecha = computed(() => {
+  if (Array.isArray(range.value) && range.value[0]) {
+    const start = range.value[0]
+    const end = range.value[1] || start
+    if (start.getTime() === end.getTime()) {
+      return format(start, 'dd MMM')
+    }
+    return `${format(start, 'dd MMM')} - ${format(end, 'dd MMM')}`
+  }
+  return 'Introduce las fechas'
+})
+
+const handleClickOutside = (event) => {
+  if (root.value && !root.value.contains(event.target)) {
+    open.value = false
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('mousedown', handleClickOutside)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('mousedown', handleClickOutside)
+})
+
+// Update store when range changes
+watch(
+  range,
+  (newRange) => {
+    if (Array.isArray(newRange) && newRange[0]) {
+      searchStore.setFechas({
+        inicio: format(newRange[0], 'yyyy-MM-dd'),
+        fin: newRange[1] ? format(newRange[1], 'yyyy-MM-dd') : format(newRange[0], 'yyyy-MM-dd'),
+      })
+    } else {
+      searchStore.setFechas({ inicio: null, fin: null })
+    }
+  },
+  { deep: true },
+)
+
+// Sync back from store (reset case)
+watch(
+  () => searchStore.pending.fechas,
+  (newFechas) => {
+    if (!newFechas.inicio && !newFechas.fin) {
+      range.value = null
+    }
+  },
+  { deep: true },
+)
+
 const formattedDate = computed(() => {
-  if (!date.value) return 'Introduce las fechas'
-  if (Array.isArray(date.value)) {
-    const [start, end] = date.value
-    if (!start) return 'Introduce las fechas'
+  if (Array.isArray(range.value) && range.value[0]) {
+    const start = range.value[0]
+    const end = range.value[1] || start
     const startStr = start.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
-    if (!end) return startStr
     const endStr = end.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
+
+    if (start.getTime() === end.getTime()) {
+      return startStr
+    }
     return `${startStr} - ${endStr}`
   }
-  return date.value.toLocaleDateString('es-ES')
+  return 'Introduce las fechas'
 })
 
 const toggleDropdown = () => {
   open.value = !open.value
+}
+
+const limpiarFechas = (e) => {
+  e.stopPropagation()
+  range.value = null
+  searchStore.setFechas({ inicio: null, fin: null })
+  searchStore.triggerSearch() // Update results immediately
+  open.value = false
 }
 
 // Quick Select Logic
@@ -30,22 +106,29 @@ const selectDateOption = (option) => {
   const today = startOfToday()
 
   if (option === 'hoy') {
-    date.value = [today, today]
+    range.value = [today, today]
   } else if (option === 'manana') {
     const tmrw = addDays(today, 1)
-    date.value = [tmrw, tmrw]
+    range.value = [tmrw, tmrw]
   } else if (option === 'finde') {
     const friday = nextFriday(today)
     const sunday = nextSunday(today)
-    date.value = [friday, sunday]
+    range.value = [friday, sunday]
   }
 }
 </script>
 
 <template>
-  <div class="fechaSelectorWrapper" tabindex="0" @blur="open = false">
+  <div ref="root" class="fechaSelectorWrapper">
     <!-- Trigger -->
-    <p class="selector-trigger" @click="toggleDropdown">{{ formattedDate }}</p>
+    <div class="selector-trigger" @click="toggleDropdown">
+      <div class="display-content">
+        <span :class="{ 'has-value': Array.isArray(range) && range[0] }">{{ formattedDate }}</span>
+        <button v-if="Array.isArray(range) && range[0]" class="clear-btn" @click.stop="limpiarFechas">
+          ✕
+        </button>
+      </div>
+    </div>
 
     <!-- Dropdown -->
     <div v-if="open" class="date-dropdown" @mousedown.prevent>
@@ -73,7 +156,7 @@ const selectDateOption = (option) => {
         <!-- Calendar -->
         <div class="calendar-wrapper">
           <VueDatePicker
-            v-model="date"
+            v-model="range"
             inline
             auto-apply
             :enable-time-picker="false"
@@ -97,13 +180,50 @@ const selectDateOption = (option) => {
 
 .selector-trigger {
   margin: 0;
+  cursor: pointer;
+  padding: 8px 0;
+  width: 100%;
+}
+
+.display-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+}
+
+.display-content span {
   font-size: 14px;
   color: #717171;
-  cursor: pointer;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  padding: 8px 0;
+}
+
+.display-content span.has-value {
+  color: #222;
+  font-weight: 600;
+}
+
+.clear-btn {
+  background: #f7f7f7;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: #717171;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.clear-btn:hover {
+  background: #ebebeb;
+  color: #222;
 }
 
 /* Dropdown Container */

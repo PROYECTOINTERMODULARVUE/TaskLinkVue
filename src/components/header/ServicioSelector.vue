@@ -1,51 +1,80 @@
 <script setup>
 import { usecategoriasStore } from '@/stores/categoria'
-import { computed, onMounted, ref } from 'vue'
+import { useSearchStore } from '@/stores/search'
+import { computed, onMounted, ref, watch } from 'vue'
 
 const categoriasStore = usecategoriasStore()
-const textoCategoria = ref('Añade un servicio')
-const filtro = ref('')
-const mostrarSugerencias = ref(false)
+const searchStore = useSearchStore()
+const textoCategoria = ref(
+  searchStore.pending.servicio ? searchStore.pending.servicio.Nombre : 'Añade un servicio',
+)
+const verCategorias = ref(false)
+const filtroCategoria = ref('')
 
 onMounted(async () => {
   await categoriasStore.todasLasCategorias()
 })
 
-const categoriasFiltrados = computed(() => {
-  const busqueda = filtro.value.toLowerCase().trim()
-  let lista = categoriasStore.categorias
+// Sync text if store changes (e.g. reset)
+watch(
+  () => searchStore.pending.servicio,
+  (newServ) => {
+    textoCategoria.value = newServ ? newServ.Nombre : 'Añade un servicio'
+  },
+)
+
+const mostrarCategorias = () => {
+  verCategorias.value = !verCategorias.value
+  if (verCategorias.value) {
+    filtroCategoria.value = ''
+  }
+}
+
+const seleccionarCategoria = (cat) => {
+  textoCategoria.value = cat.Nombre
+  searchStore.setServicio(cat)
+  verCategorias.value = false
+  filtroCategoria.value = ''
+}
+
+const limpiarServicio = (e) => {
+  e.stopPropagation()
+  searchStore.setServicio(null)
+  searchStore.triggerSearch() // Update results immediately
+  verCategorias.value = false
+}
+
+const categoriasFiltradas = computed(() => {
+  const busqueda = filtroCategoria.value.toLowerCase().trim()
+  let result = categoriasStore.categorias
+
   if (busqueda) {
-    lista = lista.filter((categoria) => categoria.Nombre.toLowerCase().includes(busqueda))
+    result = result.filter((cat) => cat.Nombre.toLowerCase().includes(busqueda))
   }
-  return lista.slice(0, 10)
+
+  return result
 })
-
-const seleccionarCategoria = (categoria) => {
-  textoCategoria.value = categoria.Nombre
-  mostrarSugerencias.value = false
-  filtro.value = ''
-}
-
-const toggleSugerencias = () => {
-  mostrarSugerencias.value = !mostrarSugerencias.value
-  if (mostrarSugerencias.value) {
-    filtro.value = ''
-  }
-}
 </script>
 
 <template>
-  <div class="servicioSelectorWrapper" tabindex="0" @blur="mostrarSugerencias = false">
-    <!-- Trigger -->
-    <p class="selector-trigger" @click="toggleSugerencias">{{ textoCategoria }}</p>
+  <div class="servicioSelectorWrapper" tabindex="0" @blur="verCategorias = false">
+    <!-- Trigger Text -->
+    <div class="selector-trigger" @click="mostrarCategorias">
+      <div class="display-content">
+        <span :class="{ 'has-value': searchStore.pending.servicio }">{{ textoCategoria }}</span>
+        <button v-if="searchStore.pending.servicio" class="clear-btn" @click.stop="limpiarServicio">
+          ✕
+        </button>
+      </div>
+    </div>
 
     <!-- Dropdown -->
-    <div v-if="mostrarSugerencias" class="categoriaSuggestions" @mousedown.prevent>
+    <div v-if="verCategorias" class="categoriaSuggestions" @mousedown.prevent>
       <!-- Internal Search Input -->
       <div class="search-container">
         <i class="bi bi-search search-icon"></i>
         <input
-          v-model="filtro"
+          v-model="filtroCategoria"
           type="text"
           placeholder="Buscar servicios..."
           class="inputInternal"
@@ -55,7 +84,7 @@ const toggleSugerencias = () => {
 
       <div class="list-container">
         <div
-          v-for="categoria in categoriasFiltrados"
+          v-for="categoria in categoriasFiltradas"
           :key="categoria.id"
           class="list-option"
           @click.stop="seleccionarCategoria(categoria)"
@@ -67,7 +96,7 @@ const toggleSugerencias = () => {
           <span>{{ categoria.Nombre }}</span>
         </div>
 
-        <div v-if="categoriasFiltrados.length === 0 && filtro" class="no-results">
+        <div v-if="categoriasFiltradas.length === 0 && filtroCategoria" class="no-results">
           No se encontraron servicios
         </div>
       </div>
@@ -84,13 +113,53 @@ const toggleSugerencias = () => {
 
 .selector-trigger {
   margin: 0;
+  cursor: pointer;
+  padding: 0; /* Remove padding to fill container */
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.display-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+}
+
+.display-content span {
   font-size: 14px;
   color: #717171;
-  cursor: pointer;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  padding: 8px 0;
+}
+
+.display-content span.has-value {
+  color: #222;
+  font-weight: 600;
+}
+
+.clear-btn {
+  background: #f7f7f7;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: #717171;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.clear-btn:hover {
+  background: #ebebeb;
+  color: #222;
 }
 
 /* Dropdown */
