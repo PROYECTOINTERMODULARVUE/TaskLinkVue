@@ -348,6 +348,13 @@ onMounted(() => {
   gap: 10px;
   border-bottom: 1px solid #eee;
   margin-bottom: 20px;
+  overflow-x: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.tabs::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
 }
 
 .tab-button {
@@ -358,6 +365,7 @@ onMounted(() => {
   font-weight: 500;
   color: #666;
   border-bottom: 2px solid transparent;
+  white-space: nowrap;
 }
 
 .tab-button.active {

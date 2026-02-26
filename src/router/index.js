@@ -94,6 +94,11 @@ const router = createRouter({
       name: 'pago-reserva',
       component: () => import('@/views/PagoReservaView.vue'),
       meta: { requiresAuth: true }
+    },
+    {
+      path: '/sostenibilidad',
+      name: 'sostenibilidad',
+      component: () => import('@/views/SostenibilidadView.vue')
     }
   ],
 })

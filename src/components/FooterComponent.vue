@@ -12,8 +12,8 @@ const router = useRouter();
       <div class="footer-asistencia">
         <h2>Sobre Nosotros</h2>
         <div>
-          <p>Esta página web va dirigida a la generación de servicios.<br>
-            Puedes tanto contratar servicios como crear servicios para otras personas.</p>
+          <p>Esta página web va dirigida a la generación de servicios.<br></p>
+          <p>Puedes tanto contratar servicios como crear servicios para otras personas.</p>
         </div>
       </div>
 
@@ -29,6 +29,7 @@ const router = useRouter();
         <h2>TaskLink</h2>
         <div>
           <a @click="router.push('/lanzamiento')">Lanzamiento TaskLink</a>
+          <a @click="router.push('/sostenibilidad')">Sostenibilidad 🌱</a>
           <a @click="router.push('/empleo')">Empleo</a>
           <a @click="router.push('/inversores')">Inversores</a>
         </div>

@@ -39,28 +39,30 @@
         </div>
 
         <div v-if="loadingUsers" class="loading-state">Cargando usuarios...</div>
-        <table v-else class="admin-table">
-          <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>Email</th>
-              <th>Rol</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="user in filteredUsers" :key="user.IDUsuario">
-              <td>{{ user.Nombre }} {{ user.Apellidos }}</td>
-              <td>{{ user.email }}</td>
-              <td>
-                <span :class="['badge', user.Rol]">{{ user.Rol }}</span>
-              </td>
-              <td>
-                <button @click="openEditUserModal(user)" class="btn-icon">✏️</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <div v-else class="table-responsive">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Email</th>
+                <th>Rol</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="user in filteredUsers" :key="user.IDUsuario">
+                <td>{{ user.Nombre }} {{ user.Apellidos }}</td>
+                <td>{{ user.email }}</td>
+                <td>
+                  <span :class="['badge', user.Rol]">{{ user.Rol }}</span>
+                </td>
+                <td>
+                  <button @click="openEditUserModal(user)" class="btn-icon">✏️</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <!-- FAQ CATEGORIES TAB -->
@@ -69,27 +71,29 @@
           <button @click="openCreateCatModal" class="btn-primary">+ Nueva Categoría</button>
         </div>
 
-        <table class="admin-table">
-          <thead>
-            <tr>
-              <th>Icono</th>
-              <th>Nombre</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="cat in faqCategories" :key="cat.IDFaqCategoria">
-              <td class="text-center">{{ cat.Icono }}</td>
-              <td>{{ cat.Nombre }}</td>
-              <td>
-                <button @click="openEditCatModal(cat)" class="btn-icon">✏️</button>
-                <button @click="deleteCategory(cat.IDFaqCategoria)" class="btn-icon delete">
-                  🗑️
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <div class="table-responsive">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Icono</th>
+                <th>Nombre</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="cat in faqCategories" :key="cat.IDFaqCategoria">
+                <td class="text-center">{{ cat.Icono }}</td>
+                <td>{{ cat.Nombre }}</td>
+                <td>
+                  <button @click="openEditCatModal(cat)" class="btn-icon">✏️</button>
+                  <button @click="deleteCategory(cat.IDFaqCategoria)" class="btn-icon delete">
+                    🗑️
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <!-- FAQS TAB -->
@@ -109,25 +113,27 @@
         </div>
 
         <div v-if="loadingFaqs" class="loading-state">Cargando preguntas...</div>
-        <table v-else class="admin-table">
-          <thead>
-            <tr>
-              <th>Pregunta</th>
-              <th>Categoría</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="faq in filteredFaqs" :key="faq.IDFaq">
-              <td>{{ faq.Pregunta }}</td>
-              <td>{{ faq.categoria?.Nombre }}</td>
-              <td>
-                <button @click="openEditFaqModal(faq)" class="btn-icon">✏️</button>
-                <button @click="deleteFaq(faq.IDFaq)" class="btn-icon delete">🗑️</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <div v-else class="table-responsive">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Pregunta</th>
+                <th>Categoría</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="faq in filteredFaqs" :key="faq.IDFaq">
+                <td>{{ faq.Pregunta }}</td>
+                <td>{{ faq.categoria?.Nombre }}</td>
+                <td>
+                  <button @click="openEditFaqModal(faq)" class="btn-icon">✏️</button>
+                  <button @click="deleteFaq(faq.IDFaq)" class="btn-icon delete">🗑️</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </section>
     </div>
 
@@ -428,6 +434,13 @@ onMounted(() => {
   gap: 1rem;
   border-bottom: 2px solid #e2e8f0;
   margin-bottom: 2rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.config-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .tab-btn {
@@ -440,6 +453,7 @@ onMounted(() => {
   transition: all 0.2s;
   border-bottom: 3px solid transparent;
   margin-bottom: -2px;
+  white-space: nowrap;
 }
 
 .tab-btn:hover {
@@ -469,6 +483,13 @@ onMounted(() => {
   border-radius: 8px;
   width: 100%;
   max-width: 400px;
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 1rem;
 }
 
 /* Table styles */

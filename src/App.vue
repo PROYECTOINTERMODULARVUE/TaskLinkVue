@@ -92,7 +92,8 @@ header {
   border-bottom-left-radius: 20px;
   border-bottom-right-radius: 20px;
 }
-body{
+body {
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 </style>
