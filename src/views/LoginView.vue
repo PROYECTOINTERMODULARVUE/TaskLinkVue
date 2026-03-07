@@ -1,14 +1,20 @@
 <script setup>
 import { useusuarioStore } from '@/stores/usuario'
 import { ErrorMessage, Field, Form } from 'vee-validate'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import * as yup from 'yup'
-
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 
 const usuarioStore = useusuarioStore()
 const router = useRouter()
+const route = useRoute()
 const errorLogin = ref('')
+
+onMounted(() => {
+  if (route.query.error === 'google_user_not_found') {
+    errorLogin.value = 'Tu cuenta de Google no está registrada en TaskLink. Por favor, regístrate primero.'
+  }
+})
 
 const loguearse = async (values) => {
   errorLogin.value = ''
@@ -32,6 +38,11 @@ const schema = yup.object({
     .min(6, 'La contraseña debe tener al menos 6 caracteres')
     .max(50, 'La contraseña debe tener máximo 50 caracteres'),
 })
+
+const loginWithGoogle = () => {
+  const apiUrl = import.meta.env.VITE_SERVER_URL // Ensure this includes http://localhost:8000/
+  window.location.href = `${apiUrl}auth/google`
+}
 </script>
 <template>
   <div class="login-container">
@@ -71,6 +82,16 @@ const schema = yup.object({
             </div>
 
             <button type="submit">Iniciar Sesión</button>
+
+            <div class="divider">
+              <span>o inicia sesión con</span>
+            </div>
+
+            <button type="button" class="google-login-btn" @click="loginWithGoogle">
+              <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google Logo" />
+              Continuar con Google
+            </button>
+
             <div class="login-footer-links">
               <a class="contraOlvidada" @click="router.push('/restablecer-contraseña')"
                 >¿Olvidaste tu contraseña?</a
@@ -273,6 +294,55 @@ const schema = yup.object({
     box-shadow 0.3s;
   box-shadow: 0 4px 12px rgba(43, 78, 162, 0.3);
   margin-top: 1rem;
+}
+
+/* Google Login Styles */
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 1.5rem 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.divider span {
+  padding: 0 10px;
+}
+
+.google-login-btn {
+  width: 100%;
+  padding: 0.9rem;
+  background: white;
+  color: #333;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  transition: all 0.3s;
+}
+
+.google-login-btn:hover {
+  background-color: #f9fbff;
+  border-color: #4f7cff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.google-login-btn img {
+  width: 24px;
+  height: 24px;
 }
 
 .general-error {

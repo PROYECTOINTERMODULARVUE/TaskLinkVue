@@ -99,6 +99,11 @@ const router = createRouter({
       path: '/sostenibilidad',
       name: 'sostenibilidad',
       component: () => import('@/views/SostenibilidadView.vue')
+    },
+    {
+      path: '/auth/google/callback',
+      name: 'google-callback',
+      component: () => import('@/views/GoogleCallbackView.vue')
     }
   ],
 })
