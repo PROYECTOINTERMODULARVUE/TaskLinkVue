@@ -35,7 +35,7 @@ const schema = yup.object({
   password: yup
     .string()
     .required('La contraseña es obligatoria')
-    .min(6, 'La contraseña debe tener al menos 6 caracteres')
+    .min(6, 'La contraseña debe tener al menos 8 caracteres')
     .max(50, 'La contraseña debe tener máximo 50 caracteres'),
 })
 

@@ -2,7 +2,7 @@
 import { useRoute } from 'vue-router'
 import AppMenu from './components/header/AppMenu.vue'
 import { useusuarioStore } from './stores/usuario'
-import { onMounted } from 'vue'
+import { onMounted, watch } from 'vue'
 import FooterComponent from './components/FooterComponent.vue'
 const route = useRoute()
 
@@ -27,43 +27,93 @@ onMounted(async () => {
     script.src = 'https://cdn.jsdelivr.net/npm/@n8n/chat/dist/chat.bundle.es.js'
     script.type = 'module'
     script.onload = () => {
-      import('https://cdn.jsdelivr.net/npm/@n8n/chat/dist/chat.bundle.es.js').then(({ createChat }) => {
-        createChat({
-          webhookUrl: `${import.meta.env.VITE_N8N_URL}/webhook/${import.meta.env.VITE_N8N_CHAT_WEBHOOK_ID}`,
-          mode: 'window',
-           title: '¡Hola! 👋',
-            subtitle: 'Asistente de TaskLink. Estamos aquí para ayudarte 24/7.',
-            placeholder: 'Escribe tu pregunta...',
-            initialMessages: [
-                '¡Hola! 👋 Soy el asistente de TaskLink.',
-                '¿Buscas algún servicio o quieres consultar el estado de una reserva?'
-            ],
-            i18n: {
-                en: {
-                    title: '¡Hola! 👋',
-                    subtitle: 'Asistente de TaskLink. Estamos para ayudarte 24/7.',
-                    inputPlaceholder: 'Escribe tu pregunta...',
-            }
-          }
-        })
-
-        // Forzar colores vía CSS (funciona seguro)
-        const style = document.createElement('style')
-        style.innerHTML = `
-          :root {
-            --chat--color--primary: #007bff !important;
-            --chat--header--background: #001a33 !important;
-          }
-          .n8n-chat-widget {
-            --chat--color--primary: #007bff !important;
-          }
-        `
-        document.head.appendChild(style)
-      })
+      inicializarChat()
     }
     document.body.appendChild(script)
   }
 })
+
+const inicializarChat = () => {
+  import('https://cdn.jsdelivr.net/npm/@n8n/chat/dist/chat.bundle.es.js').then(({ createChat }) => {
+    // Eliminar widget previo si existe para evitar duplicados al re-inicializar
+    const existingWidget = document.querySelector('.n8n-chat-widget')
+    if (existingWidget) existingWidget.remove()
+
+    const userEmail = usuarioStore.datosUsuario?.email || ''
+    
+    createChat({
+      webhookUrl: `${import.meta.env.VITE_N8N_URL}/webhook/${import.meta.env.VITE_N8N_CHAT_WEBHOOK_ID}`,
+      metadata: {
+        email: userEmail
+      },
+      mode: 'window',
+      title: '¡Hola! 👋',
+      subtitle: userEmail 
+        ? `Asistente para ${usuarioStore.datosUsuario.Nombre}. Estamos aquí para ayudarte.`
+        : 'Asistente de TaskLink. Inicia sesión para ver tus reservas.',
+      placeholder: 'Escribe tu pregunta...',
+      initialMessages: [
+        userEmail 
+          ? `¡Hola ${usuarioStore.datosUsuario.Nombre}! 👋 ¿En qué puedo ayudarte hoy?` 
+          : '¡Hola! 👋 Soy el asistente de TaskLink. ¿Buscas algún servicio o quieres consultar el estado de una reserva?',
+        !userEmail ? 'Recuerda que para ver tus reservas personales debes iniciar sesión.' : ''
+      ].filter(m => m !== ''),
+      i18n: {
+        en: {
+          title: '¡Hola! 👋',
+          subtitle: userEmail 
+            ? `Asistente para ${usuarioStore.datosUsuario.Nombre}.`
+            : 'Asistente de TaskLink. Por favor, inicia sesión.',
+          inputPlaceholder: 'Escribe tu pregunta...',
+        }
+      }
+    })
+
+    // Forzar colores vía CSS (funciona seguro)
+    const styleId = 'n8n-custom-styles'
+    let style = document.getElementById(styleId)
+    if (!style) {
+      style = document.createElement('style')
+      style.id = styleId
+      document.head.appendChild(style)
+    }
+    style.innerHTML = `
+      :root {
+        --chat--color--primary: #007bff !important;
+        --chat--header--background: #001a33 !important;
+      }
+      /* Reglas para ocultar el chatbot de n8n */
+      body.hide-chatbot .n8n-chat-widget,
+      body.hide-chatbot #n8n-chat-widget,
+      body.hide-chatbot div[class*="n8n-chat"] {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+      }
+    `
+  })
+}
+
+// Re-inicializar el chat cuando el usuario cambia (login/logout)
+watch(() => usuarioStore.datosUsuario, () => {
+  if (document.getElementById('n8n-chat-script')) {
+    inicializarChat()
+  }
+})
+
+// Control de visibilidad del chatbot basado en la ruta
+watch(() => route.path, (newPath) => {
+  // Verificación más flexible (incluyendo posibles barras al final o parámetros)
+  const pathsToHide = ['/login', '/registro', '/restablecer-contraseña', '/auth/google/callback']
+  const shouldHide = pathsToHide.some(p => newPath.startsWith(p))
+  
+  if (shouldHide) {
+    document.body.classList.add('hide-chatbot')
+  } else {
+    document.body.classList.remove('hide-chatbot')
+  }
+}, { immediate: true })
 </script>
 
 <template>
