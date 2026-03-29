@@ -1,135 +1,158 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { useStores } from '@/stores'
-import ReservationList from '@/components/mensajes/ReservationList.vue'
-import ClientReservationList from '@/components/mensajes/ClientReservationList.vue'
-
-const stores = useStores()
-
-const cargando = ref(false)
-const error = ref(null)
-
-const isCliente = computed(() => stores.rol.isCliente)
-const isGestorOrAdmin = computed(() => stores.rol.isGestor || stores.rol.isAdmin)
-
-const reservasRecibidas = computed(() => stores.reserva.reservasRecibidas)
-const reservasHechas = computed(() => stores.reserva.reservasHechas)
-
-onMounted(async () => {
-  await fetchReservas()
-})
-
-const fetchReservas = async () => {
-  cargando.value = true
-  error.value = null
-  try {
-    if (isGestorOrAdmin.value) {
-      await stores.reserva.fetchReservasRecibidas()
-    }
-    if (isCliente.value) {
-      await stores.reserva.fetchReservasHechas()
-    }
-  } catch (err) {
-    error.value = 'No se pudieron cargar las reservas. Por favor, inténtalo de nuevo.'
-    console.error(err)
-  } finally {
-    cargando.value = false
-  }
-}
-
-const handleUpdateEstado = async ({ id, estado }) => {
-  try {
-    await stores.reserva.actualizarEstadoReserva(id, estado)
-  } catch (err) {
-    alert('Error al actualizar el estado de la reserva')
-  }
-}
-
-const handleCancelarCliente = async (id) => {
-  if (confirm('¿Estás seguro de que deseas cancelar esta reserva?')) {
-    try {
-      await stores.reserva.cancelarReservaCliente(id)
-    } catch (err) {
-      alert('Error al cancelar la reserva')
-    }
-  }
-}
 </script>
 
 <template>
-  <div class="mensajes-view">
-    <div class="header-section">
-      <h1>{{ isGestorOrAdmin ? 'Gestión de Reservas' : 'Mis Reservas' }}</h1>
-      <p class="subtitle">
-        {{
-          isGestorOrAdmin
-            ? 'Administra las solicitudes de tus servicios y mantén el control de tu agenda.'
-            : 'Consulta el estado de tus reservas y gestiona tus citas.'
-        }}
-      </p>
-    </div>
+  <div class="mensajes-proximamente">
+    <div class="content-card">
+      <div class="icon-wrapper">
+        <i class="bi bi-chat-dots"></i>
+      </div>
+      <h1>Mensajes</h1>
+      <p class="subtitle">¡Estamos preparando algo increíble para ti!</p>
+      
+      <div class="divider"></div>
+      
+      <div class="feature-info">
+        <p>Próximamente podrás comunicarte directamente con los profesionales para:</p>
+        <ul>
+          <li><i class="bi bi-check2-circle"></i> Resolver dudas sobre servicios</li>
+          <li><i class="bi bi-check2-circle"></i> Ajustar detalles de tus citas</li>
+          <li><i class="bi bi-check2-circle"></i> Recibir presupuestos personalizados</li>
+        </ul>
+      </div>
 
-    <!-- Vista para Gestores/Admins -->
-    <div v-if="isGestorOrAdmin" class="gestor-view">
-      <ReservationList
-        :reservas="reservasRecibidas"
-        :cargando="cargando"
-        :error="error"
-        @update-estado="handleUpdateEstado"
-      />
-    </div>
-
-    <!-- Vista para Clientes -->
-    <div v-if="isCliente" class="cliente-view" :class="{ 'with-divider': isGestorOrAdmin }">
-      <h2 v-if="isGestorOrAdmin" class="section-title">Como cliente</h2>
-      <ClientReservationList
-        :reservas="reservasHechas"
-        :cargando="cargando"
-        :error="error"
-        @cancelar="handleCancelarCliente"
-      />
+      <div class="badge-soon">Disponible próximamente</div>
+      
+      <router-link to="/" class="back-btn">
+        Volver al inicio
+      </router-link>
     </div>
   </div>
 </template>
 
 <style scoped>
-.mensajes-view {
-  max-width: 1200px;
-  margin: 0 auto;
+.mensajes-proximamente {
+  min-height: 70vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 40px 20px;
+  background-color: #f8fafc;
 }
 
-.header-section {
-  margin-bottom: 40px;
+.content-card {
+  max-width: 600px;
+  width: 100%;
+  background: white;
+  padding: 50px 40px;
+  border-radius: 24px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+  text-align: center;
+  border: 1px solid #e2e8f0;
 }
 
-.header-section h1 {
+.icon-wrapper {
+  font-size: 4rem;
+  color: #3b82f6;
+  margin-bottom: 20px;
+  background: #eff6ff;
+  width: 100px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  margin: 0 auto 24px;
+}
+
+h1 {
   font-size: 2.5rem;
-  color: #222;
-  margin-bottom: 8px;
+  font-weight: 800;
+  color: #1e293b;
+  margin-bottom: 12px;
 }
 
 .subtitle {
-  color: #666;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
+  color: #64748b;
+  margin-bottom: 30px;
 }
 
-.section-title {
-  margin: 40px 0 20px;
-  font-size: 1.5rem;
-  color: #333;
-  padding-bottom: 12px;
-  border-bottom: 2px solid #eee;
+.divider {
+  height: 1px;
+  background: #e2e8f0;
+  margin: 30px 0;
 }
 
-.with-divider {
-  border-top: 1px solid #eee;
-  margin-top: 60px;
-  padding-top: 20px;
+.feature-info {
+  text-align: left;
+  margin-bottom: 40px;
+  background: #f1f5f9;
+  padding: 24px;
+  border-radius: 16px;
 }
 
-@media (max-width: 768px) {
-  .header-section h1 {
+.feature-info p {
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: 16px;
+}
+
+.feature-info ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.feature-info li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  color: #64748b;
+}
+
+.feature-info li i {
+  color: #10b981;
+  font-size: 1.2rem;
+}
+
+.badge-soon {
+  display: inline-block;
+  background: #dbeafe;
+  color: #1e40af;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  margin-bottom: 30px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.back-btn {
+  display: inline-block;
+  padding: 14px 32px;
+  background-color: #3b82f6;
+  color: white;
+  text-decoration: none;
+  border-radius: 12px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.back-btn:hover {
+  background-color: #2563eb;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+@media (max-width: 640px) {
+  .content-card {
+    padding: 30px 20px;
+  }
+  
+  h1 {
     font-size: 2rem;
   }
 }

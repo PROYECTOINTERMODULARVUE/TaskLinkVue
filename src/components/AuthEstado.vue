@@ -124,7 +124,7 @@ const handleFileChange = (event) => {
             <router-link to="/mensajes"><span>💬</span> Mensajes</router-link>
           </li>
           <li>
-            <router-link to="/mis-compras"><span>🧾</span> Mis compras</router-link>
+            <router-link to="/mis-reservas"><span>🧾</span> Mis reservas</router-link>
           </li>
 
           <!-- Role Logic: idRol != 2 (assuming 2 is Client, or whatever logic user implied 'auth()->user()->idRol != 2') -->

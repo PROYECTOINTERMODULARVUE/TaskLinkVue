@@ -74,6 +74,12 @@ const router = createRouter({
       component: () => import('@/views/MensajesView.vue')
     },
     {
+      path: '/mis-reservas',
+      name: 'mis-reservas',
+      component: () => import('@/views/MisReservasView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/empleo',
       name: 'empleo',
       component: () => import('@/views/EmpleoView.vue')

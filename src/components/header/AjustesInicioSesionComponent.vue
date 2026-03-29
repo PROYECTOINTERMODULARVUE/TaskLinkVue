@@ -122,7 +122,7 @@ const handleFileChange = async (event) => {
             </a>
           </li>
           <li>
-            <a @click="$router.push('/mis-compras')"><span>🧾</span> Mis compras</a>
+            <a @click="$router.push('/mis-reservas')"><span>🧾</span> Mis reservas</a>
           </li>
 
           <li v-if="rolStore.isAdmin">
