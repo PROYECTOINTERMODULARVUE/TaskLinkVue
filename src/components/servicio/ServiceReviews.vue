@@ -1,22 +1,61 @@
 <script setup>
+import { ref } from 'vue'
+import api from '@/services/api'
+
 const props = defineProps({
   datosUsuario: Object,
   reseñasVisibles: Array,
   yaHaComentado: Boolean,
+  tieneReservaCompletada: Boolean,
+  servicioId: [String, Number],
 })
 
-const emit = defineEmits(['irALogin'])
+const emit = defineEmits(['irALogin', 'valoracionEnviada'])
+
+const puntuacion = ref(3)
+const comentario = ref('')
+const enviando = ref(false)
 
 const getInicial = (nombre) => {
   return nombre ? nombre.charAt(0).toUpperCase() : '?'
 }
 
 const formatearFecha = (fecha) => {
+  if (!fecha) return ''
   return new Intl.DateTimeFormat('es-ES', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
   }).format(new Date(fecha))
+}
+
+const publicarValoracion = async () => {
+  if (!puntuacion.value) {
+    alert('Por favor, selecciona una puntuación.')
+    return
+  }
+
+  enviando.value = true
+  try {
+    await api.valoraciones.create(props.servicioId, {
+      Puntuacion: puntuacion.value,
+      Comentario: comentario.value,
+    })
+    
+    // Limpiar formulario
+    comentario.value = ''
+    puntuacion.value = 3
+    
+    // Notificar al padre para que refresque los datos
+    emit('valoracionEnviada')
+    alert('¡Gracias por tu valoración!')
+  } catch (error) {
+    console.error('Error al publicar valoración:', error)
+    const errorMsg = error.response?.data?.message || 'Hubo un error al publicar tu valoración.'
+    alert(errorMsg)
+  } finally {
+    enviando.value = false
+  }
 }
 </script>
 
@@ -46,17 +85,17 @@ const formatearFecha = (fecha) => {
 
     <!-- Lista de Reseñas (Si está logueado y hay reseñas) -->
     <div v-else-if="reseñasVisibles.length > 0" class="reviews-list">
-      <div v-for="valoracion in reseñasVisibles" :key="valoracion.id" class="review-item">
+      <div v-for="valoracion in reseñasVisibles" :key="valoracion.IDValoracion || valoracion.id" class="review-item">
         <div class="review-header">
-          <div class="review-avatar">{{ getInicial(valoracion.usuario?.Nombre) }}</div>
+          <div class="review-avatar">{{ getInicial(valoracion.usuario?.Nombre || valoracion.usuario?.name) }}</div>
           <div class="review-user-info">
-            <div class="user-name">{{ valoracion.usuario?.Nombre || 'Usuario' }}</div>
+            <div class="user-name">{{ valoracion.usuario?.Nombre || valoracion.usuario?.name || 'Usuario' }}</div>
             <div class="review-meta">
               <span class="stars"
                 >{{ '★'.repeat(valoracion.Puntuacion)
                 }}{{ '☆'.repeat(5 - valoracion.Puntuacion) }}</span
               >
-              <span class="review-date">{{ formatearFecha(valoracion.Fecha) }}</span>
+              <span class="review-date">{{ formatearFecha(valoracion.FechaValoracion || valoracion.created_at) }}</span>
             </div>
           </div>
         </div>
@@ -72,21 +111,33 @@ const formatearFecha = (fecha) => {
     </div>
 
     <!-- Formulario de Valoración -->
-    <div v-if="datosUsuario && !yaHaComentado" class="form-valoracion-container mt-4">
+    <div v-if="datosUsuario && !yaHaComentado && tieneReservaCompletada" class="form-valoracion-container mt-4">
       <h4 class="section-title-small">Deja tu valoración</h4>
       <div class="rating-form mb-3">
-        <input type="radio" name="rating" value="5" id="s5" /><label for="s5">★</label>
-        <input type="radio" name="rating" value="4" id="s4" /><label for="s4">★</label>
-        <input type="radio" name="rating" value="3" id="s3" checked /><label for="s3">★</label>
-        <input type="radio" name="rating" value="2" id="s2" /><label for="s2">★</label>
-        <input type="radio" name="rating" value="1" id="s1" /><label for="s1">★</label>
+        <input type="radio" name="rating" value="5" id="s5" v-model="puntuacion" /><label for="s5">★</label>
+        <input type="radio" name="rating" value="4" id="s4" v-model="puntuacion" /><label for="s4">★</label>
+        <input type="radio" name="rating" value="3" id="s3" v-model="puntuacion" /><label for="s3">★</label>
+        <input type="radio" name="rating" value="2" id="s2" v-model="puntuacion" /><label for="s2">★</label>
+        <input type="radio" name="rating" value="1" id="s1" v-model="puntuacion" /><label for="s1">★</label>
       </div>
       <textarea
+        v-model="comentario"
         class="form-control mb-3"
         rows="3"
         placeholder="Escribe aquí tu opinión..."
+        :disabled="enviando"
       ></textarea>
-      <button class="btn-enviar">Publicar valoración</button>
+      <button 
+        @click="publicarValoracion" 
+        class="btn-enviar"
+        :disabled="enviando"
+      >
+        {{ enviando ? 'Publicando...' : 'Publicar valoración' }}
+      </button>
+    </div>
+    <div v-else-if="datosUsuario && !yaHaComentado && !tieneReservaCompletada" class="alert-warning-custom mt-4">
+      <i class="bi bi-info-circle-fill me-2"></i>
+      Solo puedes valorar este servicio si has realizado una reserva y esta ha sido completada.
     </div>
     <div v-else-if="datosUsuario && yaHaComentado" class="alert-info-custom mt-4">
       ✅ Gracias por tu valoración. Ya has opinado sobre este servicio.
@@ -183,6 +234,14 @@ const formatearFecha = (fecha) => {
   border-radius: 8px;
   border: 1px solid #bde0ff;
   color: #0056b3;
+}
+
+.alert-warning-custom {
+  background: #fff8e1;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #ffe082;
+  color: #856404;
 }
 
 .reviews-empty-state {

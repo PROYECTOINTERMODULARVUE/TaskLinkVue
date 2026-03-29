@@ -138,6 +138,13 @@ const faqCategories = {
     delete: (id) => extractData(apiClient.delete(`/faq-categories/${id}`)),
 }
 
+const valoraciones = {
+  getByServicio: (idServicio) => extractData(apiClient.get(`/servicios/${idServicio}/valoraciones`)),
+  create: (idServicio, item) => extractData(apiClient.post(`/valoraciones/servicios/${idServicio}`, item)),
+  modify: (id, item) => extractData(apiClient.put(`/valoraciones/${id}`, item)),
+  delete: (id) => extractData(apiClient.delete(`/valoraciones/${id}`)),
+}
+
 export default {
     zonas,
     servicios,
@@ -148,6 +155,7 @@ export default {
     faqs,
     faqCategories,
     tarjetas,
+    valoraciones,
     n8n: {
         confirmarCompra: (data) => axios.post(`${import.meta.env.VITE_N8N_URL}/webhook/de8655a7-0ebb-49cb-aca5-2302a73b65ac`, data)
     }

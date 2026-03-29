@@ -36,6 +36,30 @@ onMounted(async () => {
   if (!datosUsuario.value) {
     await usuarioStore.cargarUsuario()
   }
+  if (datosUsuario.value) {
+    await reservaStore.fetchReservasHechas()
+  }
+})
+
+const tieneReservaCompletada = computed(() => {
+  if (!datosUsuario.value || !reservaStore.reservasHechas) return false
+  return reservaStore.reservasHechas.some(
+    (r) =>
+      r.Estado === 'Completada' &&
+      r.detalles?.some((d) => Number(d.idServicio) === Number(id))
+  )
+})
+
+const yaHaComentado = computed(() => {
+  if (!datosUsuario.value || !servicioPasado.value?.valoraciones) return false
+  return servicioPasado.value.valoraciones.some(
+    (v) => (v.idUsuario || v.IDUsuario) === (datosUsuario.value.id || datosUsuario.value.IDUsuario)
+  )
+})
+
+const esPropietario = computed(() => {
+  if (!datosUsuario.value || !servicioPasado.value) return false
+  return (datosUsuario.value.id || datosUsuario.value.IDUsuario) === servicioPasado.value.idProveedor
 })
 
 const getInicial = (nombre) => {
@@ -52,16 +76,6 @@ const formatearFecha = (fecha) => {
 
 const reseñasVisibles = computed(() => {
   return servicioPasado.value?.valoraciones?.slice(0, 5) || []
-})
-
-const yaHaComentado = computed(() => {
-  if (!datosUsuario.value || !servicioPasado.value?.valoraciones) return false
-  return servicioPasado.value.valoraciones.some((v) => v.idUsuario === datosUsuario.value.id)
-})
-
-const esPropietario = computed(() => {
-  if (!datosUsuario.value || !servicioPasado.value) return false
-  return datosUsuario.value.IDUsuario === servicioPasado.value.idProveedor
 })
 
 const fotoPrincipal = computed(() => {
@@ -122,6 +136,11 @@ const reservarServicio = async (payload) => {
   }
 }
 
+const refrescarServicio = async () => {
+  const servicio = await servicioStore.unaServicio(id)
+  servicioStore.setServicioPasado(servicio)
+}
+
 const irALogin = () => {
   router.push('/login')
 }
@@ -156,9 +175,12 @@ const irALogin = () => {
           :datos-usuario="datosUsuario"
           :reseñas-visibles="reseñasVisibles"
           :ya-ha-comentado="yaHaComentado"
+          :tiene-reserva-completada="tieneReservaCompletada"
+          :servicio-id="id"
           :get-inicial="getInicial"
           :formatear-fecha="formatearFecha"
           @ir-a-login="irALogin"
+          @valoracion-enviada="refrescarServicio"
         />
       </div>
 
